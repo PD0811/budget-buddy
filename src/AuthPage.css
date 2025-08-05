@@ -1,0 +1,158 @@
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  min-width: 100vw;
+  background: transparent;
+}
+
+.auth-container {
+  min-height: 100vh;
+  min-width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f4f4f4;
+  position: relative; /* Add this */
+}
+
+.auth-container.dark {
+  background-color: #18181b;
+}
+
+.dark-toggle {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: #e5e7eb;
+  color: #18181b;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 10;
+}
+
+.auth-container.dark .dark-toggle {
+  background: #23232a;
+  color: #f4f4f4;
+  border: 1px solid #444;
+}
+
+.auth-box {
+  background-color: #fff;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.auth-container.dark .auth-box {
+  background-color: #23232a;
+  color: #f4f4f4;
+}
+
+.subheading {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.auth-container.dark .subheading {
+  color: #b3b3b3;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 10px;
+  margin: 0.6rem 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.auth-container.dark .login-form input {
+  background-color: #2c2c36;
+  color: #f4f4f4;
+  border: 1px solid #444;
+}
+
+.login-form button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-container.dark .login-form button,
+.auth-container.dark .send-otp {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+.login-form button:hover {
+  background-color: #0056b3;
+}
+
+.auth-container.dark .login-form button:hover,
+.auth-container.dark .send-otp:hover {
+  background-color: #1e40af;
+}
+
+.signup-text {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.signup-button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.auth-container.dark .signup-button {
+  color: #60a5fa;
+}
+
+.signup-button:hover {
+  text-decoration: underline;
+}
+
+.auth-container.dark .signup-button:hover {
+  text-decoration: underline;
+}
+
+.send-otp {
+  background-color: #28a745;
+  color: white;
+  padding: 10px;
+  margin-top: 1rem;
+  border: none;
+  width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-container.dark h1 {
+  color: #f4f4f4;
+}
+
+.auth-container.dark .dark-toggle {
+  background: #23232a;
+  color: #f4f4f4;
+  border: 1px solid #444;
+}
