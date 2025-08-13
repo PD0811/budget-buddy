@@ -1,0 +1,141 @@
+/* Create a new file: frontend/src/components/ReportCalendar.css */
+
+.report-calendar-page {
+  padding: 2rem;
+  background-color: #f7fafc; /* A light grey background for the page */
+  min-height: 100vh;
+}
+
+.report-title {
+  text-align: center;
+  font-size: 2.25rem;
+  color: #2d3748;
+  margin-bottom: 2rem;
+}
+
+.calendar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* --- Loader Styles --- */
+.loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- Calendar Overrides --- */
+.react-calendar {
+  width: 100%;
+  border: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Style the top navigation bar */
+.react-calendar__navigation button {
+  font-size: 1.25rem;
+  font-weight: bold;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.react-calendar__navigation button:hover {
+  background-color: #f0f4fa;
+}
+
+.react-calendar__navigation button:disabled {
+  background-color: #f7fafc;
+  color: #ccc;
+}
+
+/* Style the weekday headers (Mon, Tue, etc.) */
+.react-calendar__month-view__weekdays__weekday {
+  text-align: center;
+  font-weight: 600;
+  color: #718096;
+  padding: 0.75rem 0;
+  text-decoration: none; /* Remove underline */
+}
+
+/* Base style for all day tiles */
+.react-calendar__tile {
+  height: 120px; /* Make tiles taller */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.react-calendar__tile:hover {
+  background-color: #e9f5ff;
+}
+
+/* Style for the current day */
+.react-calendar__tile--now {
+  background-color: #f0f4fa;
+  border: 2px solid #60a5fa;
+}
+
+.react-calendar__tile {
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.5rem;
+  border-radius: 0; /* Changed: Removed rounded edges */
+  border: 1px solid #e2e8f0; /* Changed: Added a slight, solid border */
+  transition: all 0.2s ease-in-out;
+}
+
+/* Our custom class for days with expenses */
+.day-with-expense {
+  background-color: #f0fff4; /* A very light green tint */
+}
+
+/* The little chip that shows the expense amount */
+.expense-chip {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9999px; /* A pill shape */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
