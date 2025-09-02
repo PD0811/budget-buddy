@@ -1,34 +1,24 @@
 import React from "react";
+import "./modern-ui.css";
 
 const ReportPrediction: React.FC = () => (
-  <div style={pageStyle}>
-    <h2>Automatic Purchase Prediction</h2>
-    <button
-      style={{
-        padding: "0.75rem 1.5rem",
-        background: "#2563eb",
-        color: "#fff",
-        border: "none",
-        borderRadius: 4,
-        fontSize: "1rem",
-      }}
-    >
+  <div
+    className="card page-card"
+    style={{ textAlign: "center", maxWidth: 560 }}
+  >
+    <h2 className="page-heading" style={{ fontSize: "1.55rem" }}>
+      Automatic Purchase Prediction
+    </h2>
+    <p style={{ color: "#8b96a5", fontSize: ".9rem", margin: "0 0 1.4rem" }}>
+      Leverage patterns to anticipate future purchases.
+    </p>
+    <button className="bb-btn" style={{ fontSize: ".8rem" }}>
       Predict Purchases
     </button>
-    <p style={{ marginTop: 24, color: "#888" }}>
+    <p style={{ marginTop: 24, color: "#8b96a5", fontSize: ".8rem" }}>
       Prediction functionality coming soon.
     </p>
   </div>
 );
-
-const pageStyle: React.CSSProperties = {
-  maxWidth: 500,
-  margin: "2rem auto",
-  background: "#fff",
-  padding: "2rem",
-  borderRadius: 8,
-  boxShadow: "0 0 10px rgba(0,0,0,0.07)",
-  textAlign: "center",
-};
 
 export default ReportPrediction;

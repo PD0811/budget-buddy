@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./modern-ui.css";
 
 const defaultProductTypes = [
   "Vegetables",
@@ -52,68 +53,60 @@ const AddProductType: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "2rem auto",
-        background: "#fff",
-        padding: "2rem",
-        borderRadius: 8,
-        boxShadow: "0 0 10px rgba(0,0,0,0.07)",
-      }}
-    >
-      <h2>Add Product Type</h2>
+    <div className="card page-card">
+      <h2 className="page-heading" style={{ fontSize: "1.45rem" }}>
+        Add Product Type
+      </h2>
       <form
         onSubmit={handleAddType}
-        style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}
+        style={{
+          display: "flex",
+          gap: "1rem",
+          alignItems: "flex-end",
+          flexWrap: "wrap",
+          marginBottom: "1.4rem",
+        }}
       >
-        <input
-          type="text"
-          value={newType}
-          onChange={(e) => setNewType(e.target.value)}
-          required
-          placeholder="Enter new product type"
-          style={{ width: 200 }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: "0.5rem 1.5rem",
-            background: "#2563eb",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-          }}
-        >
+        <label>
+          New Type
+          <br />
+          <input
+            type="text"
+            value={newType}
+            onChange={(e) => setNewType(e.target.value)}
+            required
+            placeholder="Enter new product type"
+            style={{ width: 220 }}
+          />
+        </label>
+        <button type="submit" className="bb-btn">
           Add Type
         </button>
       </form>
-
-      <h3 style={{ marginTop: "1.5rem" }}>Product Types List</h3>
+      <h3
+        style={{ marginTop: "1rem", fontSize: "1.05rem", letterSpacing: 0.4 }}
+      >
+        Product Types List
+      </h3>
       {productTypes.length === 0 ? (
         <p>No product types added yet.</p>
       ) : (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginTop: "1rem",
-          }}
-        >
+        <table className="table-modern" style={{ marginTop: "1rem" }}>
           <thead>
-            <tr style={{ background: "#f0f4fa" }}>
-              <th style={thStyle}>Product Type</th>
-              <th style={thStyle}>Delete</th>
+            <tr>
+              <th>Product Type</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
             {productTypes.map((type) => (
-              <tr key={type} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={tdStyle}>{type}</td>
-                <td style={tdStyle}>
+              <tr key={type}>
+                <td>{type}</td>
+                <td>
                   <button
                     onClick={() => handleDeleteType(type)}
-                    style={deleteBtnStyle}
+                    className="bb-btn danger"
+                    style={{ padding: ".4rem .9rem", fontSize: ".65rem" }}
                   >
                     Delete
                   </button>
@@ -126,26 +119,4 @@ const AddProductType: React.FC = () => {
     </div>
   );
 };
-
-const thStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  borderBottom: "2px solid #ddd",
-  fontWeight: 600,
-  fontSize: "1rem",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  textAlign: "center",
-};
-
-const deleteBtnStyle: React.CSSProperties = {
-  background: "#e53e3e",
-  color: "#fff",
-  border: "none",
-  borderRadius: 4,
-  padding: "0.25rem 0.75rem",
-  cursor: "pointer",
-};
-
 export default AddProductType;

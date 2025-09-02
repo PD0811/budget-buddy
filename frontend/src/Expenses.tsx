@@ -29,10 +29,10 @@ const Expenses: React.FC = () => {
   // --- Fetch expenses from the backend ---
   const fetchExpenses = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/expenses');
-      
+      const response = await fetch("http://localhost:3001/api/expenses");
+
       if (!response.ok) {
-        throw new Error('Failed to fetch expenses.');
+        throw new Error("Failed to fetch expenses.");
       }
       const data = await response.json();
       setExpenses(data);
@@ -49,7 +49,7 @@ const Expenses: React.FC = () => {
           date: "2024-08-12",
           brand: "Sample Brand",
           vendor: "Sample Vendor",
-        }
+        },
       ]);
     }
   };
@@ -57,7 +57,7 @@ const Expenses: React.FC = () => {
   // --- Fetch data on component mount ---
   useEffect(() => {
     fetchExpenses();
-  }, []);  // Handle form changes
+  }, []); // Handle form changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -65,29 +65,27 @@ const Expenses: React.FC = () => {
     setForm((prev) => ({
       ...prev,
       [name]:
-        name === "quantity" || name === "unitPrice"
-          ? Number(value)
-          : value,
+        name === "quantity" || name === "unitPrice" ? Number(value) : value,
     }));
   };
 
   // Add or update expense
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!form.productName.trim()) {
-      alert('Product name is required');
+      alert("Product name is required");
       return;
     }
-    
+
     if (!form.vendor.trim()) {
-      alert('Vendor is required');
+      alert("Vendor is required");
       return;
     }
-    
+
     const totalPrice = form.quantity * form.unitPrice;
-    
+
     // Create expense data
     let expenseData = {
       productName: form.productName,
@@ -101,18 +99,18 @@ const Expenses: React.FC = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:3001/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:3001/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expenseData),
       });
 
       if (!response.ok) {
         let errorMessage = `Server error: ${response.status}`;
-        
+
         // Try to get the response body for more details
         const responseText = await response.text();
-        
+
         if (responseText) {
           try {
             const errorData = JSON.parse(responseText);
@@ -122,10 +120,10 @@ const Expenses: React.FC = () => {
             errorMessage = responseText;
           }
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       // Re-fetch the list from the server
       await fetchExpenses();
 
@@ -139,21 +137,22 @@ const Expenses: React.FC = () => {
         vendor: "",
         categoryName: "",
       });
-
     } catch (error) {
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        alert('Cannot connect to backend server. Please check if it is running on port 3001.');
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        alert(
+          "Cannot connect to backend server. Please check if it is running on port 3001."
+        );
       } else if (error instanceof Error) {
         alert(`Server error: ${error.message}`);
       } else {
-        alert('An unexpected error occurred.');
+        alert("An unexpected error occurred.");
       }
-      
+
       // Don't add locally on server errors, only on network errors
-      if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (error instanceof TypeError && error.message.includes("fetch")) {
         // For development, add expense locally if backend is not available
         const newExpense: Expense = {
-          id: Math.max(...expenses.map(e => e.id), 0) + 1,
+          id: Math.max(...expenses.map((e) => e.id), 0) + 1,
           productName: form.productName,
           quantity: form.quantity,
           unitPrice: form.unitPrice,
@@ -162,9 +161,9 @@ const Expenses: React.FC = () => {
           brand: form.brand,
           vendor: form.vendor,
         };
-        
-        setExpenses(prev => [...prev, newExpense]);
-        
+
+        setExpenses((prev) => [...prev, newExpense]);
+
         // Reset the form for the next entry
         setForm({
           productName: "",
@@ -214,17 +213,10 @@ const Expenses: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "2rem auto",
-        background: "#fff",
-        padding: "2rem",
-        borderRadius: 8,
-        boxShadow: "0 0 10px rgba(0,0,0,0.07)",
-      }}
-    >
-      <h2>{editingId ? "Edit Expense" : "Add Expense"}</h2>
+    <div className="card" style={{ maxWidth: 880, margin: "0 auto" }}>
+      <h2 style={{ marginTop: 0, fontSize: "1.4rem", letterSpacing: 0.3 }}>
+        {editingId ? "Edit Expense" : "Add Expense"}
+      </h2>
       <form
         onSubmit={handleSubmit}
         style={{
@@ -232,6 +224,7 @@ const Expenses: React.FC = () => {
           flexWrap: "wrap",
           gap: "1rem",
           alignItems: "flex-end",
+          marginBottom: "1.25rem",
         }}
       >
         <div>
@@ -347,15 +340,18 @@ const Expenses: React.FC = () => {
             />
           </label>
         </div>
-        <div>
+        <div style={{ display: "flex", gap: ".6rem" }}>
           <button
             type="submit"
             style={{
-              padding: "0.5rem 1.5rem",
-              background: "#2563eb",
+              padding: ".6rem 1.4rem",
+              background: "#6366f1",
               color: "#fff",
               border: "none",
-              borderRadius: 4,
+              borderRadius: 8,
+              fontWeight: 600,
+              letterSpacing: 0.4,
+              cursor: "pointer",
             }}
           >
             {editingId ? "Update" : "Add"}
@@ -376,12 +372,12 @@ const Expenses: React.FC = () => {
                 });
               }}
               style={{
-                marginLeft: 8,
-                padding: "0.5rem 1.5rem",
-                background: "#aaa",
+                padding: ".6rem 1.2rem",
+                background: "#4b5563",
                 color: "#fff",
                 border: "none",
-                borderRadius: 4,
+                borderRadius: 8,
+                cursor: "pointer",
               }}
             >
               Cancel
@@ -390,7 +386,7 @@ const Expenses: React.FC = () => {
         </div>
       </form>
 
-      <h2 style={{ marginTop: "2.5rem" }}>Your Expenses</h2>
+      <h2 style={{ marginTop: "1.6rem", fontSize: "1.3rem" }}>Your Expenses</h2>
       {expenses.length === 0 ? (
         <p>No expenses added yet.</p>
       ) : (
@@ -399,10 +395,13 @@ const Expenses: React.FC = () => {
             width: "100%",
             borderCollapse: "collapse",
             marginTop: "1rem",
+            fontSize: ".85rem",
           }}
         >
           <thead>
-            <tr style={{ background: "#f0f4fa" }}>
+            <tr
+              style={{ background: "linear-gradient(90deg,#1f2733,#1a202c)" }}
+            >
               <th style={thStyle}>Date</th>
               <th style={thStyle}>Product</th>
               <th style={thStyle}>Brand</th>
@@ -416,7 +415,10 @@ const Expenses: React.FC = () => {
           <tbody>
             {expenses.map((exp) => {
               return (
-                <tr key={exp.id} style={{ borderBottom: "1px solid #eee" }}>
+                <tr
+                  key={exp.id}
+                  style={{ borderBottom: "1px solid rgba(255,255,255,.06)" }}
+                >
                   <td style={tdStyle}>{exp.date}</td>
                   <td style={tdStyle}>{exp.productName}</td>
                   <td style={tdStyle}>{exp.brand || "-"}</td>
@@ -429,11 +431,13 @@ const Expenses: React.FC = () => {
                       onClick={() => handleEdit(exp.id)}
                       style={{
                         marginRight: 8,
-                        background: "#2563eb",
+                        background: "#4f46e5",
                         color: "#fff",
                         border: "none",
-                        borderRadius: 4,
-                        padding: "0.25rem 0.75rem",
+                        borderRadius: 6,
+                        padding: ".35rem .85rem",
+                        fontSize: ".7rem",
+                        cursor: "pointer",
                       }}
                     >
                       Edit
@@ -441,11 +445,13 @@ const Expenses: React.FC = () => {
                     <button
                       onClick={() => handleDelete(exp.id)}
                       style={{
-                        background: "#e53e3e",
+                        background: "#dc2626",
                         color: "#fff",
                         border: "none",
-                        borderRadius: 4,
-                        padding: "0.25rem 0.75rem",
+                        borderRadius: 6,
+                        padding: ".35rem .85rem",
+                        fontSize: ".7rem",
+                        cursor: "pointer",
                       }}
                     >
                       Delete
@@ -462,15 +468,20 @@ const Expenses: React.FC = () => {
 };
 
 const thStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  borderBottom: "2px solid #ddd",
+  padding: ".55rem .6rem",
+  borderBottom: "2px solid rgba(255,255,255,.08)",
   fontWeight: 600,
-  fontSize: "1rem",
+  fontSize: ".7rem",
+  letterSpacing: ".5px",
+  textTransform: "uppercase",
+  color: "#9aa4b4",
+  textAlign: "center",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "0.5rem",
+  padding: ".55rem .65rem",
   textAlign: "center",
+  color: "#d6d9dd",
 };
 
 export default Expenses;

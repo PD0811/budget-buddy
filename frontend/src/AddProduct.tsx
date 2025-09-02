@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./modern-ui.css";
 
 const defaultProductTypes = [
   "Vegetables",
@@ -55,17 +56,10 @@ const AddProduct: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "2rem auto",
-        background: "#fff",
-        padding: "2rem",
-        borderRadius: 8,
-        boxShadow: "0 0 10px rgba(0,0,0,0.07)",
-      }}
-    >
-      <h2>Add Product</h2>
+    <div className="card page-card">
+      <h2 className="page-heading" style={{ fontSize: "1.45rem" }}>
+        Add Product
+      </h2>
       <form
         onSubmit={handleAddProduct}
         style={{
@@ -73,6 +67,7 @@ const AddProduct: React.FC = () => {
           gap: "1rem",
           alignItems: "flex-end",
           flexWrap: "wrap",
+          marginBottom: "1.4rem",
         }}
       >
         <div>
@@ -85,7 +80,7 @@ const AddProduct: React.FC = () => {
               onChange={(e) => setNewProductName(e.target.value)}
               required
               placeholder="Enter product name"
-              style={{ width: 180 }}
+              style={{ width: 200 }}
             />
           </label>
         </div>
@@ -97,7 +92,7 @@ const AddProduct: React.FC = () => {
               value={newProductType}
               onChange={(e) => setNewProductType(e.target.value)}
               required
-              style={{ width: 160 }}
+              style={{ width: 180 }}
             >
               {productTypes
                 .slice()
@@ -110,47 +105,37 @@ const AddProduct: React.FC = () => {
             </select>
           </label>
         </div>
-        <button
-          type="submit"
-          style={{
-            padding: "0.5rem 1.5rem",
-            background: "#2563eb",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-          }}
-        >
+        <button type="submit" className="bb-btn">
           Add Product
         </button>
       </form>
 
-      <h3 style={{ marginTop: "2rem" }}>Products List</h3>
+      <h3
+        style={{ marginTop: "1rem", fontSize: "1.05rem", letterSpacing: 0.4 }}
+      >
+        Products List
+      </h3>
       {products.length === 0 ? (
         <p>No products added yet.</p>
       ) : (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginTop: "1rem",
-          }}
-        >
+        <table className="table-modern" style={{ marginTop: "1rem" }}>
           <thead>
-            <tr style={{ background: "#f0f4fa" }}>
-              <th style={thStyle}>Product Name</th>
-              <th style={thStyle}>Product Type</th>
-              <th style={thStyle}>Delete</th>
+            <tr>
+              <th>Product Name</th>
+              <th>Product Type</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
             {products.map((prod) => (
-              <tr key={prod.name} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={tdStyle}>{prod.name}</td>
-                <td style={tdStyle}>{prod.type}</td>
-                <td style={tdStyle}>
+              <tr key={prod.name}>
+                <td>{prod.name}</td>
+                <td>{prod.type}</td>
+                <td>
                   <button
                     onClick={() => handleDeleteProduct(prod.name)}
-                    style={deleteBtnStyle}
+                    className="bb-btn danger"
+                    style={{ padding: ".4rem .9rem", fontSize: ".65rem" }}
                   >
                     Delete
                   </button>
@@ -163,26 +148,4 @@ const AddProduct: React.FC = () => {
     </div>
   );
 };
-
-const thStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  borderBottom: "2px solid #ddd",
-  fontWeight: 600,
-  fontSize: "1rem",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  textAlign: "center",
-};
-
-const deleteBtnStyle: React.CSSProperties = {
-  background: "#e53e3e",
-  color: "#fff",
-  border: "none",
-  borderRadius: 4,
-  padding: "0.25rem 0.75rem",
-  cursor: "pointer",
-};
-
 export default AddProduct;

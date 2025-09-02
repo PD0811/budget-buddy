@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./modern-ui.css";
 
 const AddVendor: React.FC = () => {
   // State for vendors
@@ -29,58 +30,49 @@ const AddVendor: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "2rem auto",
-        background: "#fff",
-        padding: "2rem",
-        borderRadius: 8,
-        boxShadow: "0 0 10px rgba(0,0,0,0.07)",
-      }}
-    >
-      <h2>Add Vendor</h2>
+    <div className="card page-card">
+      <h2 className="page-heading" style={{ fontSize: "1.45rem" }}>
+        Add Vendor
+      </h2>
       <form
         onSubmit={handleAddVendor}
-        style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}
+        style={{
+          display: "flex",
+          gap: "1rem",
+          alignItems: "flex-end",
+          flexWrap: "wrap",
+          marginBottom: "1.4rem",
+        }}
       >
-        <input
-          type="text"
-          value={newVendor}
-          onChange={(e) => setNewVendor(e.target.value)}
-          required
-          placeholder="Enter vendor name"
-          style={{ width: 200 }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: "0.5rem 1.5rem",
-            background: "#2563eb",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-          }}
-        >
+        <label>
+          Vendor Name
+          <br />
+          <input
+            type="text"
+            value={newVendor}
+            onChange={(e) => setNewVendor(e.target.value)}
+            required
+            placeholder="Enter vendor name"
+            style={{ width: 220 }}
+          />
+        </label>
+        <button type="submit" className="bb-btn">
           Add Vendor
         </button>
       </form>
-
-      <h3 style={{ marginTop: "1.5rem" }}>Vendors List</h3>
+      <h3
+        style={{ marginTop: "1rem", fontSize: "1.05rem", letterSpacing: 0.4 }}
+      >
+        Vendors List
+      </h3>
       {vendors.length === 0 ? (
         <p>No vendors added yet.</p>
       ) : (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginTop: "1rem",
-          }}
-        >
+        <table className="table-modern" style={{ marginTop: "1rem" }}>
           <thead>
-            <tr style={{ background: "#f0f4fa" }}>
-              <th style={thStyle}>Vendor Name</th>
-              <th style={thStyle}>Delete</th>
+            <tr>
+              <th>Vendor Name</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -88,12 +80,13 @@ const AddVendor: React.FC = () => {
               .slice()
               .sort()
               .map((vendor) => (
-                <tr key={vendor} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={tdStyle}>{vendor}</td>
-                  <td style={tdStyle}>
+                <tr key={vendor}>
+                  <td>{vendor}</td>
+                  <td>
                     <button
                       onClick={() => handleDeleteVendor(vendor)}
-                      style={deleteBtnStyle}
+                      className="bb-btn danger"
+                      style={{ padding: ".4rem .9rem", fontSize: ".65rem" }}
                     >
                       Delete
                     </button>
@@ -106,26 +99,4 @@ const AddVendor: React.FC = () => {
     </div>
   );
 };
-
-const thStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  borderBottom: "2px solid #ddd",
-  fontWeight: 600,
-  fontSize: "1rem",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "0.5rem",
-  textAlign: "center",
-};
-
-const deleteBtnStyle: React.CSSProperties = {
-  background: "#e53e3e",
-  color: "#fff",
-  border: "none",
-  borderRadius: 4,
-  padding: "0.25rem 0.75rem",
-  cursor: "pointer",
-};
-
 export default AddVendor;

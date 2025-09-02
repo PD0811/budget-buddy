@@ -1,190 +1,199 @@
 import React, { useState } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
+import {
+  FiGrid,
+  FiDollarSign,
+  FiPackage,
+  FiLayers,
+  FiTruck,
+  FiBarChart2,
+  FiActivity,
+  FiCalendar,
+  FiFileText,
+  FiLogOut,
+  FiChevronRight,
+} from "react-icons/fi";
+import "./modern-ui.css";
+
+interface SubItem {
+  label: string;
+  path: string;
+  icon?: React.ReactNode;
+}
+interface MenuItem {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+  action?: () => void;
+  items?: SubItem[];
+}
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const handleMenuClick = (menu: string) => {
-    setOpenMenu(openMenu === menu ? null : menu);
-  };
+  const toggleMenu = (menu: string) =>
+    setOpenMenu((prev) => (prev === menu ? null : menu));
+
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const menu: MenuItem[] = [
+    {
+      key: "dashboard",
+      label: "Dashboard",
+      icon: <FiGrid />,
+      action: () => navigate("/dashboard"),
+    },
+    {
+      key: "expenses",
+      label: "Expenses",
+      icon: <FiDollarSign />,
+      items: [
+        {
+          label: "Add / Manage Expenses",
+          path: "/expenses",
+          icon: <FiDollarSign />,
+        },
+      ],
+    },
+    {
+      key: "products",
+      label: "Products",
+      icon: <FiPackage />,
+      items: [
+        { label: "Add Product", path: "/product/add", icon: <FiPackage /> },
+        {
+          label: "Add Product Type",
+          path: "/product/add-type",
+          icon: <FiLayers />,
+        },
+        { label: "Add Vendor", path: "/product/add-vendor", icon: <FiTruck /> },
+      ],
+    },
+    {
+      key: "reports",
+      label: "Reports",
+      icon: <FiBarChart2 />,
+      items: [
+        {
+          label: "Automatic Purchase Prediction",
+          path: "/reports/prediction",
+          icon: <FiActivity />,
+        },
+        {
+          label: "Monthly Expense Report",
+          path: "/reports/monthly",
+          icon: <FiFileText />,
+        },
+        {
+          label: "Calendar View",
+          path: "/reports/calendar",
+          icon: <FiCalendar />,
+        },
+        {
+          label: "Export to Excel",
+          path: "/reports/export",
+          icon: <FiFileText />,
+        },
+      ],
+    },
+  ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f5f5f5" }}>
-      {/* Sidebar */}
-      <aside
-        style={{
-          width: 260,
-          background: "#23232a",
-          color: "#fff",
-          display: "flex",
-          flexDirection: "column",
-          padding: "2rem 1rem",
-          boxShadow: "2px 0 10px rgba(0,0,0,0.07)",
-        }}
-      >
-        <h2
-          style={{
-            marginBottom: "2rem",
-            textAlign: "center",
-            fontWeight: 700,
-            fontSize: "1.5rem",
-            letterSpacing: 1,
-          }}
-        >
-          BudgetBuddy
-        </h2>
-        
-        {/* Dashboard */}
-        <button
-          style={sidebarBtnStyle}
-          onClick={() => navigate('/dashboard')}
-        >
-          Dashboard
-        </button>
-
-        {/* Expenses */}
-        <div>
-          <button
-            style={sidebarBtnStyle}
-            onClick={() => handleMenuClick("expenses")}
-          >
-            Expenses
-          </button>
-          {openMenu === "expenses" && (
-            <div style={submenuStyle}>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/expenses")}
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand-block">
+          <div className="brand">
+            <span className="brand-icon">
+              <FiDollarSign />
+            </span>
+            BudgetBuddy
+          </div>
+        </div>
+        <div className="sidebar-scroll">
+          <div className="nav-section-title">Navigation</div>
+          {menu.map((item) => {
+            const active = item.items
+              ? item.items.some((si) => isActive(si.path))
+              : isActive("/" + item.key);
+            return (
+              <div
+                key={item.key}
+                style={{ position: "relative" }}
+                onMouseEnter={() => item.items && setOpenMenu(item.key)}
+                onMouseLeave={() => item.items && setOpenMenu(null)}
               >
-                Add/View/Edit/Delete Expenses
-              </button>
-            </div>
-          )}
+                <button
+                  className={`nav-btn ${active ? "active" : ""}`}
+                  onClick={() => {
+                    if (item.items) {
+                      toggleMenu(item.key);
+                    } else if (item.action) {
+                      item.action();
+                    }
+                  }}
+                >
+                  <span className="icon-wrap">{item.icon}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.items && (
+                    <FiChevronRight
+                      style={{
+                        transition: "transform .25s",
+                        transform:
+                          openMenu === item.key ? "translateX(3px)" : "none",
+                      }}
+                    />
+                  )}
+                </button>
+                {item.items && openMenu === item.key && (
+                  <div className="submenu-popover">
+                    {item.items.map((sub) => (
+                      <button
+                        key={sub.path}
+                        className="submenu-btn"
+                        onClick={() => {
+                          navigate(sub.path);
+                          setOpenMenu(null);
+                        }}
+                      >
+                        <span className="bullet" />
+                        {sub.icon && (
+                          <span
+                            style={{
+                              color: "#818cf8",
+                              fontSize: "1rem",
+                              display: "grid",
+                              placeItems: "center",
+                            }}
+                          >
+                            {sub.icon}
+                          </span>
+                        )}
+                        <span style={{ flex: 1 }}>{sub.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Products */}
-        <div>
-          <button
-            style={sidebarBtnStyle}
-            onClick={() => handleMenuClick("products")}
-          >
-            Products
-          </button>
-          {openMenu === "products" && (
-            <div style={submenuStyle}>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/product/add")}
-              >
-                Add Product
-              </button>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/product/add-type")}
-              >
-                Add Product Type
-              </button>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/product/add-vendor")}
-              >
-                Add Vendor
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Reports */}
-        <div>
-          <button
-            style={sidebarBtnStyle}
-            onClick={() => handleMenuClick("reports")}
-          >
-            Reports
-          </button>
-          {openMenu === "reports" && (
-            <div style={submenuStyle}>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/reports/prediction")}
-              >
-                Automatic Purchase Prediction
-              </button>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/reports/monthly")}
-              >
-                Monthly Expense Report
-              </button>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/reports/calendar")}
-              >
-                Calendar View of Expenses
-              </button>
-              <button
-                style={submenuBtnStyle}
-                onClick={() => navigate("/reports/export")}
-              >
-                Export Expenses to Excel
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Logout */}
-        <div style={{ marginTop: "auto" }}>
-          <button
-            style={{ ...sidebarBtnStyle, background: "#e53e3e", color: "#fff" }}
-            onClick={() => navigate("/")}
-          >
+        <div className="logout-btn">
+          <button className="nav-btn" onClick={() => navigate("/")}>
+            <span className="icon-wrap">
+              <FiLogOut />
+            </span>
             Logout
           </button>
         </div>
       </aside>
-
-      {/* Main Content */}
-      <main style={{ flex: 1 }}>
+      <main className="app-main">
         <Outlet />
       </main>
     </div>
   );
 };
-
-const sidebarBtnStyle: React.CSSProperties = {
-  width: "100%",
-  background: "#2563eb",
-  color: "#fff",
-  border: "none",
-  borderRadius: 4,
-  padding: "0.75rem 1rem",
-  fontSize: "1rem",
-  marginBottom: "0.5rem",
-  cursor: "pointer",
-  textAlign: "left",
-  fontWeight: 500,
-  transition: "background 0.2s",
-};
-
-const submenuStyle: React.CSSProperties = {
-  marginLeft: "1rem",
-  marginBottom: "0.5rem",
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.25rem",
-};
-
-const submenuBtnStyle: React.CSSProperties = {
-  background: "#374151",
-  color: "#fff",
-  border: "none",
-  borderRadius: 4,
-  padding: "0.5rem 1rem",
-  fontSize: "0.95rem",
-  textAlign: "left",
-  cursor: "pointer",
-  marginBottom: "0.2rem",
-};
-
 export default Layout;
