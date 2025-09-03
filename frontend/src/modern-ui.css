@@ -45,6 +45,7 @@ html {
   display: flex;
   min-height: 100vh;
   width: 100%;
+  position: relative;
 }
 .sidebar {
   width: var(--sidebar-width);
@@ -58,7 +59,7 @@ html {
   box-shadow: var(--shadow-elev);
   overflow: visible; /* allow popovers to overflow */
   backdrop-filter: blur(18px) saturate(140%);
-  z-index: 60;
+  z-index: 1000; /* raise above main */
 }
 .sidebar-scroll {
   overflow-y: auto;
@@ -147,7 +148,7 @@ html {
 .submenu-popover {
   position: absolute;
   top: 0;
-  left: calc(100% + 0.65rem);
+  left: calc(100% + 0.3rem);
   min-width: 240px;
   background: linear-gradient(145deg, #1d2430, #141a22 65%);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -160,7 +161,7 @@ html {
   flex-direction: column;
   gap: 0.4rem;
   animation: flyIn 0.28s var(--transition);
-  z-index: 120; /* above sidebar */
+  z-index: 1100; /* above sidebar */
 }
 @keyframes flyIn {
   from {

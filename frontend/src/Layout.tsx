@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import {
   FiGrid,
@@ -32,9 +32,33 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [submenuPosition, setSubmenuPosition] = useState<{
+    top: number;
+    direction: "right" | "left";
+  }>({ top: 0, direction: "right" });
+  const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  const toggleMenu = (menu: string) =>
-    setOpenMenu((prev) => (prev === menu ? null : menu));
+  const toggleMenu = (menu: string) => {
+    if (openMenu === menu) {
+      setOpenMenu(null);
+      return;
+    }
+
+    setOpenMenu(menu);
+    setTimeout(() => {
+      const wrapper = menuRefs.current[menu];
+      if (wrapper) {
+        const rect = wrapper.getBoundingClientRect();
+        const submenuWidth = 260;
+        const spaceRight = window.innerWidth - rect.right;
+        const direction = spaceRight < submenuWidth ? "left" : "right";
+        setSubmenuPosition({
+          top: rect.top,
+          direction,
+        });
+      }
+    }, 0);
+  };
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
@@ -122,8 +146,9 @@ const Layout: React.FC = () => {
               <div
                 key={item.key}
                 style={{ position: "relative" }}
-                onMouseEnter={() => item.items && setOpenMenu(item.key)}
-                onMouseLeave={() => item.items && setOpenMenu(null)}
+                ref={(el) => {
+                  menuRefs.current[item.key] = el;
+                }}
               >
                 <button
                   className={`nav-btn ${active ? "active" : ""}`}
@@ -148,7 +173,20 @@ const Layout: React.FC = () => {
                   )}
                 </button>
                 {item.items && openMenu === item.key && (
-                  <div className="submenu-popover">
+                  <div
+                    className="submenu-popover"
+                    style={{
+                      position: "fixed",
+                      top: submenuPosition.top,
+                      left:
+                        submenuPosition.direction === "right"
+                          ? `calc(${getComputedStyle(
+                              document.documentElement
+                            ).getPropertyValue("--sidebar-width")} + 8px)`
+                          : undefined,
+                      right: submenuPosition.direction === "left" ? "270px" : undefined,
+                    }}
+                  >
                     {item.items.map((sub) => (
                       <button
                         key={sub.path}
@@ -196,4 +234,5 @@ const Layout: React.FC = () => {
     </div>
   );
 };
+
 export default Layout;
