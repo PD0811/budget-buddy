@@ -4,24 +4,35 @@ import "./modern-ui.css";
 
 const AuthPage = () => {
   const [role, setRole] = useState<"customer" | "vendor">("customer");
-  const [step, setStep] = useState<1 | 2>(1);
   const [contact, setContact] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (contact.trim()) {
-      setStep(2);
-      // Simulate sending OTP
-    }
-  };
+  // Dummy user data for demo
+  const users = [
+    { contact: "user@example.com", password: "password123", role: "customer" },
+    { contact: "vendor@example.com", password: "vendorpass", role: "vendor" },
+    { contact: "9876543210", password: "phonepass", role: "customer" },
+  ];
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate OTP verification
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  try {
+    const res = await fetch("http://localhost:5000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contact, password, role }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    localStorage.setItem("token", data.token);
     navigate("/dashboard");
-  };
+  } catch (err: any) {
+    setError(err.message);
+  }
+};
 
   return (
     <div
@@ -64,7 +75,7 @@ const AuthPage = () => {
           <form
             className="login-form"
             style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}
-            onSubmit={step === 1 ? handleSendOtp : handleLogin}
+            onSubmit={handleLogin}
           >
             <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
               I am a:
@@ -79,35 +90,36 @@ const AuthPage = () => {
                 <option value="vendor">Vendor</option>
               </select>
             </label>
-            {step === 1 ? (
-              <>
-                <input
-                  type="text"
-                  placeholder="Phone Number or Email"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  required
-                  style={{ width: "100%" }}
-                />
-                <button className="bb-btn" type="submit">
-                  Send OTP
-                </button>
-              </>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  style={{ width: "100%" }}
-                />
-                <button className="bb-btn" type="submit">
-                  Log In
-                </button>
-              </>
+            <input
+              type="text"
+              placeholder="Phone Number or Email"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              required
+              style={{ width: "100%" }}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: "100%" }}
+            />
+            {error && (
+              <div
+                style={{
+                  color: "var(--color-danger)",
+                  fontWeight: 600,
+                  marginBottom: "-0.5rem",
+                }}
+              >
+                {error}
+              </div>
             )}
+            <button className="bb-btn" type="submit">
+              Log In
+            </button>
           </form>
           <p style={{ marginTop: "1.2rem", color: "var(--color-text-dim)" }}>
             Don't have an account?{" "}

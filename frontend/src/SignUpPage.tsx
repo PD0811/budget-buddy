@@ -1,24 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./modern-ui.css";
 
 const SignUpPage = () => {
   const [role, setRole] = useState<"customer" | "vendor">("customer");
-  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStep(2);
-  };
+  // Dummy user data for demo
+  const [users, setUsers] = useState([
+    { contact: "user@example.com", password: "password123", role: "customer" },
+    { contact: "vendor@example.com", password: "vendorpass", role: "vendor" },
+    { contact: "9876543210", password: "phonepass", role: "customer" },
+  ]);
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSignUp = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  try {
+    const res = await fetch("http://localhost:5000/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, contact, password, role }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    localStorage.setItem("token", data.token);
     navigate("/dashboard");
-  };
+  } catch (err: any) {
+    setError(err.message);
+  }
+};
 
   return (
     <div
@@ -52,85 +66,68 @@ const SignUpPage = () => {
           >
             Sign Up
           </h1>
-          {step === 1 ? (
-            <form
-              onSubmit={handleSendOtp}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.1rem",
-              }}
-            >
-              <label
-                style={{ color: "var(--color-text-dim)", fontWeight: 600 }}
+          <form
+            onSubmit={handleSignUp}
+            style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}
+          >
+            <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
+              I am a:
+              <select
+                value={role}
+                onChange={(e) =>
+                  setRole(e.target.value as "customer" | "vendor")
+                }
+                style={{ marginLeft: 8 }}
               >
-                I am a:
-                <select
-                  value={role}
-                  onChange={(e) =>
-                    setRole(e.target.value as "customer" | "vendor")
-                  }
-                  style={{ marginLeft: 8 }}
-                >
-                  <option value="customer">Customer</option>
-                  <option value="vendor">Vendor</option>
-                </select>
-              </label>
-              <label
-                style={{ color: "var(--color-text-dim)", fontWeight: 600 }}
+                <option value="customer">Customer</option>
+                <option value="vendor">Vendor</option>
+              </select>
+            </label>
+            <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
+              Name:
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={{ width: "100%" }}
+              />
+            </label>
+            <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
+              Phone or Email:
+              <input
+                type="text"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                required
+                style={{ width: "100%" }}
+              />
+            </label>
+            <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
+              Password:
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ width: "100%" }}
+              />
+            </label>
+            {error && (
+              <div
+                style={{
+                  color: "var(--color-danger)",
+                  fontWeight: 600,
+                  marginBottom: "-0.5rem",
+                }}
               >
-                Name:
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  style={{ width: "100%" }}
-                />
-              </label>
-              <label
-                style={{ color: "var(--color-text-dim)", fontWeight: 600 }}
-              >
-                Phone or Email:
-                <input
-                  type="text"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  required
-                  style={{ width: "100%" }}
-                />
-              </label>
-              <button className="bb-btn" type="submit">
-                Send OTP
-              </button>
-            </form>
-          ) : (
-            <form
-              onSubmit={handleVerifyOtp}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.1rem",
-              }}
-            >
-              <label
-                style={{ color: "var(--color-text-dim)", fontWeight: 600 }}
-              >
-                Enter OTP sent to your{" "}
-                {contact.includes("@") ? "email" : "phone"}:
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  style={{ width: "100%" }}
-                />
-              </label>
-              <button className="bb-btn" type="submit">
-                Verify & Sign Up
-              </button>
-            </form>
-          )}
+                {error}
+              </div>
+            )}
+            <button className="bb-btn" type="submit">
+              Sign Up
+            </button>
+          </form>
           <p style={{ marginTop: "1.2rem", color: "var(--color-text-dim)" }}>
             Already have an account?{" "}
             <button
@@ -152,3 +149,4 @@ const SignUpPage = () => {
 };
 
 export default SignUpPage;
+// ...existing code...
