@@ -9,6 +9,134 @@
   border-radius: 18px;
 }
 
+/* Smaller calendar container */
+.calendar-container-small {
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  padding: 1rem;
+  border-radius: 18px;
+}
+
+/* Category Comparison Section */
+.category-comparison-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.category-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.category-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.category-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.transaction-count {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: rgba(99, 102, 241, 0.2);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.category-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amount-row.difference {
+  font-weight: 600;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.amount-label {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.amount-value {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.amount-value.current {
+  color: #10b981;
+}
+
+.amount-value.average {
+  color: #6366f1;
+}
+
+.amount-value.positive {
+  color: #10b981;
+}
+
+.amount-value.negative {
+  color: #ef4444;
+}
+
+.percentage-change {
+  text-align: right;
+  margin-top: 0.5rem;
+}
+
+.percentage {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.percentage.positive {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.percentage.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* --- Loader Styles --- */
 .loader-overlay {
   position: absolute;
@@ -81,12 +209,12 @@
 
 /* Base style for all day tiles */
 .react-calendar__tile {
-  height: 120px; /* Make tiles taller */
+  height: 80px; /* Reduced height for better proportions */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.5rem;
+  padding: 0.4rem;
   border-radius: 8px;
   border: 2px solid transparent;
   transition: all 0.2s ease-in-out;
@@ -102,12 +230,12 @@
 }
 
 .react-calendar__tile {
-  height: 120px;
+  height: 80px; /* Reduced height for better proportions */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.5rem;
+  padding: 0.4rem;
   border-radius: 0; /* Changed: Removed rounded edges */
   border: 1px solid #e2e8f0; /* Changed: Added a slight, solid border */
   transition: all 0.2s ease-in-out;
@@ -120,7 +248,8 @@
 
 /* The little chip that shows the expense amount */
 .expense-chip {
-  margin-top: 0.35rem;
-  padding: 0.25rem 0.55rem;
-  font-size: 0.65rem;
+  margin-top: 0.2rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.6rem;
+  line-height: 1.2;
 }

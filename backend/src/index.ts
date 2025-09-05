@@ -239,9 +239,20 @@ app.get('/api', (req, res) => {
 });
 app.get('/api/expenses', async (req, res) => {
   // For now, we use the hardcoded user. This will be easy to make dynamic later.
-  const userId = 'goutam1986'; 
+  const userId = 'goutam1986';
+  const { page = 1, limit = 50 } = req.query; // Default to 50 items per page
+  const offset = (Number(page) - 1) * Number(limit);
 
   try {
+    // Get total count for pagination info
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM Expenses e
+      WHERE e.user_id = $1
+    `;
+    const countResult = await pool.query(countQuery, [userId]);
+    const totalCount = parseInt(countResult.rows[0].total);
+
     // This SQL query joins all the necessary tables to get human-readable data.
     const query = `
       SELECT
@@ -263,27 +274,63 @@ app.get('/api/expenses', async (req, res) => {
         e.user_id = $1
       ORDER BY
         e.expense_date DESC, e.expense_id DESC -- Order by most recent
-      LIMIT 10; -- Limit to the 10 most recent entries
+      LIMIT $2 OFFSET $3
     `;
 
-    const { rows } = await pool.query(query, [userId]);
-    res.status(200).json(rows);
+    const { rows } = await pool.query(query, [userId, limit, offset]);
+    
+    res.status(200).json({
+      expenses: rows,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalCount / Number(limit)),
+        totalItems: totalCount,
+        itemsPerPage: Number(limit),
+        hasNextPage: Number(page) < Math.ceil(totalCount / Number(limit)),
+        hasPrevPage: Number(page) > 1
+      }
+    });
 
   } catch (err) {
     console.error('Error fetching expenses:', err);
     res.status(500).json({ error: 'An internal server error occurred while fetching expenses.' });
   }
 });
+// Search product names only
 app.get('/api/products/search', async (req, res) => {
-  const { q } = req.query; // q is the search query from the user
+  const { q } = req.query;
 
   if (!q || typeof q !== 'string') {
-    return res.json([]); // Return empty if no query
+    return res.json([]);
   }
 
   try {
-    // This query finds products where the name is similar to the search term.
-    // It also joins with Categories to get the category_name.
+    const query = `
+      SELECT DISTINCT product_name
+      FROM Products
+      WHERE product_name ILIKE $1
+      ORDER BY product_name
+      LIMIT 10;
+    `;
+    const { rows } = await pool.query(query, [`%${q}%`]);
+    const productNames = rows.map(row => row.product_name).filter(Boolean);
+    res.status(200).json(productNames);
+
+  } catch (err) {
+    console.error('Error searching product names:', err);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+});
+
+// Search product details (for other uses)
+app.get('/api/products/details', async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== 'string') {
+    return res.json([]);
+  }
+
+  try {
     const query = `
       SELECT
         p.product_id,
@@ -300,18 +347,178 @@ app.get('/api/products/search', async (req, res) => {
     res.status(200).json(rows);
 
   } catch (err) {
-    console.error('Error searching products:', err);
+    console.error('Error searching product details:', err);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+});
+
+// Search brands endpoint
+app.get('/api/brands/search', async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== 'string') {
+    return res.json([]);
+  }
+
+  try {
+    const query = `
+      SELECT DISTINCT brand
+      FROM Products
+      WHERE brand IS NOT NULL AND brand ILIKE $1
+      ORDER BY brand
+      LIMIT 10;
+    `;
+    const { rows } = await pool.query(query, [`%${q}%`]);
+    const brands = rows.map(row => row.brand).filter(Boolean);
+    res.status(200).json(brands);
+
+  } catch (err) {
+    console.error('Error searching brands:', err);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+});
+
+// Get monthly spending by category vs average
+app.get('/api/reports/monthly-category-comparison', async (req, res) => {
+  const userId = 'goutam1986';
+  const { year, month } = req.query;
+
+  // Date calculation
+  let reportYear, reportMonth;
+  if (year && month && !isNaN(parseInt(year as string)) && !isNaN(parseInt(month as string))) {
+    reportYear = parseInt(year as string);
+    reportMonth = parseInt(month as string) - 1;
+  } else {
+    const now = new Date();
+    reportYear = now.getFullYear();
+    reportMonth = now.getMonth();
+  }
+  const startDate = new Date(reportYear, reportMonth, 1).toISOString();
+  const endDate = new Date(reportYear, reportMonth + 1, 0).toISOString();
+
+  try {
+    // Get current month spending by category
+    const currentMonthQuery = `
+      SELECT
+        c.category_name,
+        SUM(e.total) AS current_month_spent,
+        COUNT(e.expense_id) AS transaction_count
+      FROM Expenses e
+      JOIN Categories c ON e.category_id = c.category_id
+      WHERE e.user_id = $1 AND e.expense_date BETWEEN $2 AND $3
+      GROUP BY c.category_id, c.category_name
+      ORDER BY current_month_spent DESC;
+    `;
+    const { rows: currentMonthData } = await pool.query(currentMonthQuery, [userId, startDate, endDate]);
+
+    // Get historical average spending by category (last 12 months)
+    const historicalStartDate = new Date(reportYear, reportMonth - 11, 1).toISOString();
+    const historicalEndDate = new Date(reportYear, reportMonth + 1, 0).toISOString();
+
+    const averageQuery = `
+      SELECT
+        c.category_name,
+        AVG(monthly_spending) AS average_monthly_spending
+      FROM (
+        SELECT
+          c.category_id,
+          c.category_name,
+          EXTRACT(YEAR FROM e.expense_date) as year,
+          EXTRACT(MONTH FROM e.expense_date) as month,
+          SUM(e.total) as monthly_spending
+        FROM Expenses e
+        JOIN Categories c ON e.category_id = c.category_id
+        WHERE e.user_id = $1 AND e.expense_date BETWEEN $2 AND $3
+        GROUP BY c.category_id, c.category_name, EXTRACT(YEAR FROM e.expense_date), EXTRACT(MONTH FROM e.expense_date)
+      ) monthly_data
+      JOIN Categories c ON monthly_data.category_id = c.category_id
+      GROUP BY c.category_id, c.category_name
+      ORDER BY average_monthly_spending DESC;
+    `;
+    const { rows: averageData } = await pool.query(averageQuery, [userId, historicalStartDate, historicalEndDate]);
+
+    // Combine current month and average data
+    const combinedData = currentMonthData.map(current => {
+      const average = averageData.find(avg => avg.category_name === current.category_name);
+      return {
+        category: current.category_name,
+        currentMonth: parseFloat(current.current_month_spent),
+        average: average ? parseFloat(average.average_monthly_spending) : 0,
+        transactionCount: parseInt(current.transaction_count),
+        difference: parseFloat(current.current_month_spent) - (average ? parseFloat(average.average_monthly_spending) : 0),
+        percentageChange: average && average.average_monthly_spending > 0 
+          ? ((parseFloat(current.current_month_spent) - parseFloat(average.average_monthly_spending)) / parseFloat(average.average_monthly_spending)) * 100
+          : 0
+      };
+    });
+
+    res.status(200).json({
+      period: { year: reportYear, month: reportMonth + 1 },
+      data: combinedData
+    });
+
+  } catch (err) {
+    console.error('Error fetching monthly category comparison:', err);
     res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 // --- FINAL API Endpoint to Add a New Expense ---
 
+// Helper function to process a single expense item
+const processExpenseItem = async (client: any, item: any, vendor: string, date: string, userId: string) => {
+  const { productName, brand, categoryName, quantity, unitPrice, totalPrice } = item;
+
+  // Find or Create Category
+  let categoryResult = await client.query('SELECT category_id FROM Categories WHERE category_name ILIKE $1', [categoryName]);
+  let categoryId;
+
+  if (categoryResult.rows.length > 0) {
+    categoryId = categoryResult.rows[0].category_id;
+  } else {
+    const newCategory = await client.query('INSERT INTO Categories (category_name) VALUES ($1) RETURNING category_id', [categoryName]);
+    categoryId = newCategory.rows[0].category_id;
+  }
+  
+  // Find or Create Product
+  let productResult = await client.query(
+    'SELECT product_id FROM Products WHERE product_name = $1 AND (brand = $2 OR (brand IS NULL AND $2 IS NULL))',
+    [productName, brand || null]
+  );
+  let productId;
+  if (productResult.rows.length > 0) {
+    productId = productResult.rows[0].product_id;
+  } else {
+    const newProductId = `${productName.substring(0, 3).toUpperCase()}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newProduct = await client.query(
+      'INSERT INTO Products (product_id, product_name, brand, category_id) VALUES ($1, $2, $3, $4) RETURNING product_id',
+      [newProductId, productName, brand || null, categoryId]
+    );
+    productId = newProduct.rows[0].product_id;
+  }
+
+  // Find or Create Vendor
+  let vendorResult = await client.query('SELECT vendor_id FROM Vendors WHERE vendor_name ILIKE $1', [vendor]);
+  let vendorId = vendorResult.rows.length > 0
+    ? vendorResult.rows[0].vendor_id
+    : (await client.query('INSERT INTO Vendors (vendor_name) VALUES ($1) RETURNING vendor_id', [vendor])).rows[0].vendor_id;
+
+  // Insert the expense record
+  const insertExpenseQuery = `
+    INSERT INTO Expenses (user_id, product_id, category_id, vendor_id, expense_date, quantity, unit_price, total)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;
+  `;
+  const expenseValues = [userId, productId, categoryId, vendorId, date, quantity, unitPrice, totalPrice];
+  const newExpense = await client.query(insertExpenseQuery, expenseValues);
+  
+  return newExpense.rows[0];
+};
+
+// Single expense endpoint (existing)
 app.post('/api/expenses', async (req, res) => {
-  // 1. Destructure categoryName instead of categoryId
   const {
     productName,
     brand,
-    categoryName, // Changed from categoryId
+    categoryName,
     quantity,
     unitPrice,
     date,
@@ -324,58 +531,56 @@ app.post('/api/expenses', async (req, res) => {
 
   try {
     await client.query('BEGIN');
-
-    // 2. "Find or Create" the Category
-    let categoryResult = await client.query('SELECT category_id FROM Categories WHERE category_name ILIKE $1', [categoryName]);
-    let categoryId;
-
-    if (categoryResult.rows.length > 0) {
-      // If the category exists, use its ID
-      categoryId = categoryResult.rows[0].category_id;
-    } else {
-      // If the category is new, insert it and get the new ID
-          const newCategory = await client.query('INSERT INTO Categories (category_name) VALUES ($1) RETURNING category_id', [categoryName]);
-      categoryId = newCategory.rows[0].category_id;
-    }
-    
-    // 3. The rest of the logic uses the determined categoryId
-    let productResult = await client.query(
-      'SELECT product_id FROM Products WHERE product_name = $1 AND (brand = $2 OR (brand IS NULL AND $2 IS NULL))',
-      [productName, brand || null]
-    );
-    let productId;
-    if (productResult.rows.length > 0) {
-      productId = productResult.rows[0].product_id;
-    } else {
-      const newProductId = `${productName.substring(0, 3).toUpperCase()}-${Date.now()}`;
-      const newProduct = await client.query(
-        'INSERT INTO Products (product_id, product_name, brand, category_id) VALUES ($1, $2, $3, $4) RETURNING product_id',
-        [newProductId, productName, brand || null, categoryId]
-      );
-      productId = newProduct.rows[0].product_id;
-    }
-
-    // Find or Create Vendor
-    let vendorResult = await client.query('SELECT vendor_id FROM Vendors WHERE vendor_name ILIKE $1', [vendor]);
-    let vendorId = vendorResult.rows.length > 0
-      ? vendorResult.rows[0].vendor_id
-      : (await client.query('INSERT INTO Vendors (vendor_name) VALUES ($1) RETURNING vendor_id', [vendor])).rows[0].vendor_id;
-
-    // Insert the final expense record
-    const insertExpenseQuery = `
-      INSERT INTO Expenses (user_id, product_id, category_id, vendor_id, expense_date, quantity, unit_price, total)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;
-    `;
-    const expenseValues = [userId, productId, categoryId, vendorId, date, quantity, unitPrice, totalPrice];
-    const newExpense = await client.query(insertExpenseQuery, expenseValues);
-
+    const result = await processExpenseItem(client, req.body, vendor, date, userId);
     await client.query('COMMIT');
-    res.status(201).json(newExpense.rows[0]);
-
+    res.status(201).json(result);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error in expense creation:', err);
     res.status(500).json({ error: 'An internal server error occurred.' });
+  } finally {
+    client.release();
+  }
+});
+
+// Batch expenses endpoint (new)
+app.post('/api/expenses/batch', async (req, res) => {
+  const { items, vendor, date } = req.body;
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Items array is required and must not be empty.' });
+  }
+
+  if (!vendor) {
+    return res.status(400).json({ error: 'Vendor is required.' });
+  }
+
+  const userId = 'goutam1986';
+  const expenseDate = date || new Date().toISOString().slice(0, 10);
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    
+    const results = [];
+    for (const item of items) {
+      const result = await processExpenseItem(client, item, vendor, expenseDate, userId);
+      results.push(result);
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ 
+      message: `Successfully added ${results.length} expenses for ${vendor}`,
+      count: results.length,
+      vendor: vendor,
+      date: expenseDate,
+      expenses: results
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error in batch expense creation:', err);
+    res.status(500).json({ error: 'An internal server error occurred while processing batch expenses.' });
   } finally {
     client.release();
   }

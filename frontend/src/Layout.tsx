@@ -76,8 +76,13 @@ const Layout: React.FC = () => {
       icon: <FiDollarSign />,
       items: [
         {
-          label: "Add / Manage Expenses",
-          path: "/expenses",
+          label: "Add Expense",
+          path: "/expenses/add",
+          icon: <FiDollarSign />,
+        },
+        {
+          label: "Manage Expenses",
+          path: "/expenses/manage",
           icon: <FiDollarSign />,
         },
       ],
