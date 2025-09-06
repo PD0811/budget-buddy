@@ -250,10 +250,23 @@ const Analytics: React.FC = () => {
             minWidth: "200px",
           }}
         >
-          <p style={{ color: "#fff", margin: "0 0 0.5rem", fontSize: "0.9rem", fontWeight: "600" }}>
+          <p
+            style={{
+              color: "#fff",
+              margin: "0 0 0.5rem",
+              fontSize: "0.9rem",
+              fontWeight: "600",
+            }}
+          >
             {data.name}
           </p>
-          <p style={{ color: "#67e8f9", margin: "0 0 0.25rem", fontSize: "0.85rem" }}>
+          <p
+            style={{
+              color: "#67e8f9",
+              margin: "0 0 0.25rem",
+              fontSize: "0.85rem",
+            }}
+          >
             Amount: ₹{data.value.toFixed(2)}
           </p>
           <p style={{ color: "#10b981", margin: "0", fontSize: "0.85rem" }}>
@@ -580,17 +593,19 @@ const Analytics: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip content={<PieTooltip />} />
-                <Legend 
-                  verticalAlign="bottom" 
+                <Legend
+                  verticalAlign="bottom"
                   height={60}
                   wrapperStyle={{
-                    paddingTop: '20px',
-                    fontSize: '12px',
-                    color: '#9aa4b4'
+                    paddingTop: "20px",
+                    fontSize: "12px",
+                    color: "#9aa4b4",
                   }}
                   formatter={(value: string) => {
                     // Truncate long category names in legend
-                    return value.length > 15 ? value.substring(0, 15) + '...' : value;
+                    return value.length > 15
+                      ? value.substring(0, 15) + "..."
+                      : value;
                   }}
                 />
               </PieChart>
@@ -605,39 +620,86 @@ const Analytics: React.FC = () => {
               <p>No spending data available for this period</p>
             </div>
           )}
-          
+
           {/* Category Breakdown Table */}
           {pieChartData.length > 0 && (
-            <div style={{ marginTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1rem" }}>
-              <h4 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "#d2dae3" }}>Category Breakdown</h4>
+            <div
+              style={{
+                marginTop: "1.5rem",
+                borderTop: "1px solid rgba(255,255,255,0.1)",
+                paddingTop: "1rem",
+              }}
+            >
+              <h4
+                style={{
+                  margin: "0 0 1rem",
+                  fontSize: "1rem",
+                  color: "#d2dae3",
+                }}
+              >
+                Category Breakdown
+              </h4>
               <div style={{ display: "grid", gap: "0.5rem" }}>
                 {pieChartData.map((item, index) => {
-                  const percentage = totalSpent > 0 ? (item.value / totalSpent) * 100 : 0;
+                  const percentage =
+                    totalSpent > 0 ? (item.value / totalSpent) * 100 : 0;
                   return (
-                    <div key={index} style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "space-between",
-                      padding: "0.5rem",
-                      background: "rgba(255,255,255,0.03)",
-                      borderRadius: "6px"
-                    }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: 1 }}>
-                        <div style={{
-                          width: "12px",
-                          height: "12px",
-                          borderRadius: "50%",
-                          background: COLORS[index % COLORS.length]
-                        }} />
-                        <span style={{ fontSize: "0.85rem", color: "#d2dae3", wordBreak: "break-word" }}>
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0.5rem",
+                        background: "rgba(255,255,255,0.03)",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          flex: 1,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "12px",
+                            height: "12px",
+                            borderRadius: "50%",
+                            background: COLORS[index % COLORS.length],
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "#d2dae3",
+                            wordBreak: "break-word",
+                          }}
+                        >
                           {item.name}
                         </span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "1rem", minWidth: "120px", justifyContent: "flex-end" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "1rem",
+                          minWidth: "120px",
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <span style={{ fontSize: "0.8rem", color: "#9aa4b4" }}>
                           {percentage.toFixed(1)}%
                         </span>
-                        <span style={{ fontSize: "0.85rem", color: "#fff", fontWeight: "600" }}>
+                        <span
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "#fff",
+                            fontWeight: "600",
+                          }}
+                        >
                           ₹{item.value.toFixed(2)}
                         </span>
                       </div>
