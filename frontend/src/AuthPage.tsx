@@ -4,26 +4,19 @@ import "./modern-ui.css";
 
 const AuthPage = () => {
   const [role, setRole] = useState<"customer" | "vendor">("customer");
-  const [contact, setContact] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  // Dummy user data for demo
-  const users = [
-    { contact: "user@example.com", password: "password123", role: "customer" },
-    { contact: "vendor@example.com", password: "vendorpass", role: "vendor" },
-    { contact: "9876543210", password: "phonepass", role: "customer" },
-  ];
 
 const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
   setError("");
   try {
-    const res = await fetch("http://localhost:5000/api/login", {
+    const res = await fetch("http://localhost:3001/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contact, password, role }),
+      body: JSON.stringify({ username, password, role }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -70,7 +63,7 @@ const handleLogin = async (e: React.FormEvent) => {
             className="subheading"
             style={{ color: "var(--color-text-dim)", marginBottom: "1.2rem" }}
           >
-            Log in to continue to your dashboard.
+            Log in with your username to continue to your dashboard.
           </p>
           <form
             className="login-form"
@@ -92,9 +85,9 @@ const handleLogin = async (e: React.FormEvent) => {
             </label>
             <input
               type="text"
-              placeholder="Phone Number or Email"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               style={{ width: "100%" }}
             />

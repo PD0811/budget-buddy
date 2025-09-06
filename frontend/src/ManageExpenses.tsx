@@ -32,7 +32,12 @@ const ManageExpenses: React.FC = () => {
     setLoading(true);
     try {
       const limit = loadAll ? 10000 : 50; // Large limit for "show all"
-      const response = await fetch(`http://localhost:3001/api/expenses?page=${page}&limit=${limit}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3001/api/expenses?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch expenses.");
       }

@@ -102,18 +102,50 @@ const AddExpense: React.FC = () => {
   };
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (field: 'productName' | 'brand', value: string) => {
-    setCurrentItem(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    if (field === 'productName') {
-      setShowProductSuggestions(false);
-    } else {
-      setShowBrandSuggestions(false);
+  const handleSuggestionSelect = async (field: 'productName' | 'brand', value: string) => {
+  if (field === 'productName') {
+    // Close dropdown immediately
+    setShowProductSuggestions(false);
+
+    try {
+      const url = new URL('http://localhost:3001/api/products/lookup');
+      url.searchParams.set('name', value); // no brand param
+
+      const resp = await fetch(url.toString());
+      if (resp.ok) {
+        const data = await resp.json();
+        // The API returns an array, so we need to get the first element
+        const product = Array.isArray(data) && data.length > 0 ? data[0] : null;
+        const cat = product?.category_name || '';
+        console.log('Product lookup result:', product); // Debug log
+        // Set both product name and category in a single call
+        setCurrentItem(prev => ({
+          ...prev,
+          productName: value,
+          categoryName: cat
+        }));
+      } else {
+        // not found -> set product name only, leave category blank
+        setCurrentItem(prev => ({ 
+          ...prev, 
+          productName: value,
+          categoryName: ''
+        }));
+      }
+    } catch {
+      // network error -> set product name only, leave category as-is
+      setCurrentItem(prev => ({ ...prev, productName: value }));
     }
-  };
+  } else {
+    // If you keep brand suggestions for other reasons, just set brand and close; no lookup
+    setCurrentItem(prev => ({ ...prev, brand: value }));
+    setShowBrandSuggestions(false);
+  }
+};
+
+
+
+
 
   const addItemToList = () => {
     if (!currentItem.productName.trim()) {
@@ -157,9 +189,13 @@ const AddExpense: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch("http://localhost:3001/api/expenses/batch", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
           items: expenseItems,
           vendor: selectedVendor,
@@ -251,7 +287,7 @@ const AddExpense: React.FC = () => {
               value={currentItem.productName}
               onChange={handleChange}
               onFocus={() => setShowProductSuggestions(currentItem.productName.length > 0)}
-              onBlur={() => setTimeout(() => setShowProductSuggestions(false), 200)}
+              onBlur={() => setTimeout(() => setShowProductSuggestions(false), 500)}
               required
               placeholder="Enter product name..."
               style={{ width: 200 }}
@@ -274,7 +310,10 @@ const AddExpense: React.FC = () => {
               {productSuggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  onClick={() => handleSuggestionSelect('productName', suggestion)}
+                onMouseDown={(e) => {
+    e.preventDefault(); // prevents input blur from cancelling the selection
+    handleSuggestionSelect('productName', suggestion);
+  }}
                   style={{
                     padding: '0.75rem',
                     cursor: 'pointer',

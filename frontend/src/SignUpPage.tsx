@@ -3,27 +3,21 @@ import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
   const [role, setRole] = useState<"customer" | "vendor">("customer");
+  const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Dummy user data for demo
-  const [users, setUsers] = useState([
-    { contact: "user@example.com", password: "password123", role: "customer" },
-    { contact: "vendor@example.com", password: "vendorpass", role: "vendor" },
-    { contact: "9876543210", password: "phonepass", role: "customer" },
-  ]);
-
 const handleSignUp = async (e: React.FormEvent) => {
   e.preventDefault();
   setError("");
   try {
-    const res = await fetch("http://localhost:5000/api/signup", {
+    const res = await fetch("http://localhost:3001/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contact, password, role }),
+      body: JSON.stringify({ username, name, contact, password, role }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -82,6 +76,17 @@ const handleSignUp = async (e: React.FormEvent) => {
                 <option value="customer">Customer</option>
                 <option value="vendor">Vendor</option>
               </select>
+            </label>
+            <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
+              Username:
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                placeholder="Choose a unique username"
+                style={{ width: "100%" }}
+              />
             </label>
             <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
               Name:

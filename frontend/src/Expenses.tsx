@@ -29,7 +29,12 @@ const Expenses: React.FC = () => {
   // --- Fetch expenses from the backend ---
   const fetchExpenses = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/expenses");
+      const token = localStorage.getItem('token');
+      const response = await fetch("http://localhost:3001/api/expenses", {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch expenses.");
@@ -99,9 +104,13 @@ const Expenses: React.FC = () => {
     };
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch("http://localhost:3001/api/expenses", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(expenseData),
       });
 

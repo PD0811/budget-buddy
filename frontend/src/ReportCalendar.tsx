@@ -32,7 +32,12 @@ const ReportCalendar: React.FC = () => {
 
       try {
         const url = `http://localhost:3001/api/reports/calendar?year=${year}&month=${month}`;
-        const response = await fetch(url);
+        const token = localStorage.getItem('token');
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch calendar data.");
         
         const data: DailyTotals = await response.json();
@@ -52,7 +57,12 @@ const ReportCalendar: React.FC = () => {
 
       try {
         const url = `http://localhost:3001/api/reports/monthly-category-comparison?year=${year}&month=${month}`;
-        const response = await fetch(url);
+        const token = localStorage.getItem('token');
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch category data.");
         
         const data = await response.json();

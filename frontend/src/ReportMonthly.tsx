@@ -44,7 +44,12 @@ const ReportMonthly: React.FC = () => {
 
     try {
       const url = `http://localhost:3001/api/reports/summary?year=${selectedYear}&month=${selectedMonth}`;
-      const response = await fetch(url);
+      const token = localStorage.getItem('token');
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error(
           "Failed to fetch report. There might be no data for the selected period."

@@ -4,6 +4,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Pool } from 'pg'; // <-- Make sure this is imported
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 // 1. Load environment variables from the .env file
 dotenv.config();
@@ -36,13 +38,112 @@ pool.query('SELECT NOW()', (err, res) => {
 app.use(cors());
 app.use(express.json());
 
-// --- Routes ---
+// --- Authentication Helper Functions ---
+const JWT_SECRET: string = process.env.JWT_SECRET || 'your-secret-key';
+
+const generateToken = (user: any) => {
+  return jwt.sign(
+    { id: user.user_id, role: user.role, name: user.name },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+};
+
+// Authentication middleware
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  try {
+    const secret = JWT_SECRET;
+    const decoded = jwt.verify(token, secret) as any;
+    req.user = decoded; // Add user info to request object
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid or expired token' });
+  }
+};
+
+// --- Authentication Routes ---
+// SIGNUP
+app.post("/api/signup", async (req, res) => {
+  const { username, name, contact, password, role } = req.body;
+  console.log('Signup request received:', { username, name, contact, role }); // Debug log
+  
+  if (!username || !name || !contact || !password || !role) {
+    return res.status(400).json({ error: "All fields are required (username, name, contact, password, role)." });
+  }
+  try {
+    const hashed = await bcrypt.hash(password, 10);
+    console.log('Password hashed successfully'); // Debug log
+    
+    const result = await pool.query(
+      `INSERT INTO users (user_id, name, contact, password_hash, role, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING user_id, name, role, contact`,
+      [username, name, contact, hashed, role]
+    );
+    console.log('Database insert successful:', result.rows[0]); // Debug log
+    
+    const user = result.rows[0];
+    const token = generateToken(user);
+    res.json({ token, user });
+  } catch (err: any) {
+    console.error('Signup error details:', err); // More detailed error logging
+    if (err.code === "23505") {
+      return res.status(400).json({ error: "Username or contact already registered." });
+    }
+    console.error(err);
+    res.status(500).json({ error: "Server error." });
+  }
+});
+
+// LOGIN
+app.post("/api/login", async (req, res) => {
+  const { username, password, role } = req.body;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM users WHERE user_id = $1 AND role = $2",
+      [username, role]
+    );
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "No account found." });
+    }
+    const user = result.rows[0];
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.status(400).json({ error: "Incorrect password." });
+
+    const token = generateToken(user);
+    res.json({
+      token,
+      user: {
+        id: user.user_id,
+        name: user.name,
+        role: user.role,
+        contact: user.contact,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error." });
+  }
+});
+
+// PROTECTED ROUTE EXAMPLE
+app.get("/api/dashboard", authenticateToken, (req: any, res) => {
+  res.json({ message: `Welcome ${req.user.name}!`, role: req.user.role });
+});
+
+// --- Other Routes ---
 // This is where your API endpoints (like POST /api/expenses) will go.
 // They will use the 'pool' object we created above to run queries.
 
 //monthly report gen
-app.get('/api/reports/summary', async (req, res) => {
-  const userId = 'goutam1986';
+app.get('/api/reports/summary', authenticateToken, async (req: any, res) => {
+  const userId = req.user.id; // Get from authenticated user
   const { year, month } = req.query;
 
   // --- Date Calculation Logic (remains the same) ---
@@ -119,8 +220,8 @@ app.get('/api/reports/summary', async (req, res) => {
 });
 //calendar
 
-app.get('/api/reports/calendar', async (req, res) => {
-  const userId = 'goutam1986'; // Hardcoded for now
+app.get('/api/reports/calendar', authenticateToken, async (req: any, res) => {
+  const userId = req.user.id; // Get from authenticated user
   const { year, month } = req.query;
 
   // --- Date validation and setup (same as our other report) ---
@@ -168,8 +269,8 @@ app.get('/api/reports/calendar', async (req, res) => {
 });
 //category breakdowns
 // This endpoint provides the raw expense data for a specific category within a given month.
-app.get('/api/reports/category-details', async (req, res) => {
-  const userId = 'goutam1986'; // Hardcoded for now
+app.get('/api/reports/category-details', authenticateToken, async (req: any, res) => {
+  const userId = req.user.id; // Get from authenticated user
 
   // We need categoryId, year, and month from the frontend
   const { categoryId, year, month } = req.query;
@@ -237,9 +338,9 @@ const query = `
 app.get('/api', (req, res) => {
   res.json({ message: 'Hello from the backend! Database connection is set up.' });
 });
-app.get('/api/expenses', async (req, res) => {
-  // For now, we use the hardcoded user. This will be easy to make dynamic later.
-  const userId = 'goutam1986';
+app.get('/api/expenses', authenticateToken, async (req: any, res) => {
+  // Get user ID from authenticated token
+  const userId = req.user.id;
   const { page = 1, limit = 50 } = req.query; // Default to 50 items per page
   const offset = (Number(page) - 1) * Number(limit);
 
@@ -306,11 +407,12 @@ app.get('/api/products/search', async (req, res) => {
 
   try {
     const query = `
-      SELECT DISTINCT product_name
-      FROM Products
-      WHERE product_name ILIKE $1
-      ORDER BY product_name
-      LIMIT 10;
+      SELECT MIN(p.product_name) AS product_name
+FROM products p
+WHERE p.product_name ILIKE $1
+GROUP BY lower(p.product_name)
+ORDER BY MIN(p.product_name)
+LIMIT 10;
     `;
     const { rows } = await pool.query(query, [`%${q}%`]);
     const productNames = rows.map(row => row.product_name).filter(Boolean);
@@ -319,6 +421,33 @@ app.get('/api/products/search', async (req, res) => {
   } catch (err) {
     console.error('Error searching product names:', err);
     res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+});
+
+// GET /api/products/lookup?name=...&brand=...
+app.get('/api/products/lookup', async (req, res) => {
+  const name = String(req.query.name || '').trim();
+  const brand = (req.query.brand == null || String(req.query.brand).trim() === '')
+    ? null
+    : String(req.query.brand).trim();
+
+  if (!name) return res.status(400).json({ error: 'Missing product name' });
+
+  try {
+    const q = `
+      SELECT p.product_id, p.product_name, p.brand, p.category_id, c.category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      WHERE lower(p.product_name) = lower($1)
+        AND COALESCE(lower(p.brand), '') = COALESCE(lower($2), '')
+      LIMIT 1;
+    `;
+    const { rows } = await pool.query(q, [name, brand]);
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(rows);
+  } catch (e) {
+    console.error('lookup error', e);
+    res.status(500).json({ error: 'Internal error' });
   }
 });
 
@@ -379,8 +508,8 @@ app.get('/api/brands/search', async (req, res) => {
 });
 
 // Get monthly spending by category vs average
-app.get('/api/reports/monthly-category-comparison', async (req, res) => {
-  const userId = 'goutam1986';
+app.get('/api/reports/monthly-category-comparison', authenticateToken, async (req: any, res) => {
+  const userId = req.user.id;
   const { year, month } = req.query;
 
   // Date calculation
@@ -514,7 +643,7 @@ const processExpenseItem = async (client: any, item: any, vendor: string, date: 
 };
 
 // Single expense endpoint (existing)
-app.post('/api/expenses', async (req, res) => {
+app.post('/api/expenses', authenticateToken, async (req: any, res) => {
   const {
     productName,
     brand,
@@ -526,7 +655,7 @@ app.post('/api/expenses', async (req, res) => {
     totalPrice
   } = req.body;
 
-  const userId = 'goutam1986';
+  const userId = req.user.id;
   const client = await pool.connect();
 
   try {
@@ -544,7 +673,7 @@ app.post('/api/expenses', async (req, res) => {
 });
 
 // Batch expenses endpoint (new)
-app.post('/api/expenses/batch', async (req, res) => {
+app.post('/api/expenses/batch', authenticateToken, async (req: any, res) => {
   const { items, vendor, date } = req.body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
@@ -555,7 +684,7 @@ app.post('/api/expenses/batch', async (req, res) => {
     return res.status(400).json({ error: 'Vendor is required.' });
   }
 
-  const userId = 'goutam1986';
+  const userId = req.user.id;
   const expenseDate = date || new Date().toISOString().slice(0, 10);
   const client = await pool.connect();
 
