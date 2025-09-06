@@ -117,6 +117,11 @@ const Layout: React.FC = () => {
           icon: <FiFileText />,
         },
         {
+          label: "Analytics",
+          path: "/reports/analytics",
+          icon: <FiBarChart2 />,
+        },
+        {
           label: "Calendar View",
           path: "/reports/calendar",
           icon: <FiCalendar />,
@@ -189,7 +194,10 @@ const Layout: React.FC = () => {
                               document.documentElement
                             ).getPropertyValue("--sidebar-width")} + 8px)`
                           : undefined,
-                      right: submenuPosition.direction === "left" ? "270px" : undefined,
+                      right:
+                        submenuPosition.direction === "left"
+                          ? "270px"
+                          : undefined,
                     }}
                   >
                     {item.items.map((sub) => (
@@ -222,15 +230,17 @@ const Layout: React.FC = () => {
               </div>
             );
           })}
-        </div>
 
-        <div className="logout-btn">
-          <button className="nav-btn" onClick={() => navigate("/")}>
-            <span className="icon-wrap">
-              <FiLogOut />
-            </span>
-            Logout
-          </button>
+          {/* Logout button with spacing */}
+          <div className="nav-separator" />
+          <div className="logout-btn">
+            <button className="nav-btn" onClick={() => navigate("/")}>
+              <span className="icon-wrap">
+                <FiLogOut />
+              </span>
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
       <main className="app-main">

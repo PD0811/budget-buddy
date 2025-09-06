@@ -205,8 +205,9 @@ html {
 }
 
 /* Accent button (logout) */
-.logout-btn {
-  margin-top: auto;
+.nav-separator {
+  height: 1.5rem;
+  margin: 0.5rem 0;
 }
 .logout-btn .nav-btn {
   background: linear-gradient(90deg, #ef4444, #dc2626);

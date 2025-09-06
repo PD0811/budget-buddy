@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import AuthPage from "./AuthPage";
 import SignUpPage from "./SignUpPage";
 import Layout from "./Layout";
@@ -12,6 +17,7 @@ import AddVendor from "./AddVendor";
 import Reports from "./Reports";
 import ReportPrediction from "./ReportPrediction";
 import ReportMonthly from "./ReportMonthly";
+import Analytics from "./Analytics";
 import ReportCalendar from "./ReportCalendar";
 import ReportExport from "./ReportExport";
 
@@ -23,7 +29,10 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/expenses" element={<Navigate to="/expenses/add" replace />} />
+          <Route
+            path="/expenses"
+            element={<Navigate to="/expenses/add" replace />}
+          />
           <Route path="/expenses/add" element={<AddExpense />} />
           <Route path="/expenses/manage" element={<ManageExpenses />} />
           <Route path="/product/add" element={<AddProduct />} />
@@ -32,6 +41,7 @@ function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/prediction" element={<ReportPrediction />} />
           <Route path="/reports/monthly" element={<ReportMonthly />} />
+          <Route path="/reports/analytics" element={<Analytics />} />
           <Route path="/reports/calendar" element={<ReportCalendar />} />
           <Route path="/reports/export" element={<ReportExport />} />
         </Route>

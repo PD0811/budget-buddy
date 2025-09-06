@@ -32,6 +32,13 @@ const Reports: React.FC = () => {
           Monthly Expense Report
         </button>
         <button
+          onClick={() => navigate("/reports/analytics")}
+          className="bb-btn outline"
+          style={{ width: "100%" }}
+        >
+          Analytics Dashboard
+        </button>
+        <button
           onClick={() => navigate("/reports/calendar")}
           className="bb-btn outline"
           style={{ width: "100%" }}
