@@ -61,78 +61,53 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ selectedVendor, onVendo
         Select Vendor
       </h3>
       
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <div style={{ flex: '1', minWidth: '200px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '0.5rem', 
-            fontSize: '0.9rem', 
-            color: '#cbd5e1',
-            fontWeight: '500'
-          }}>
-            choose vendor
-          </label>
-          <select
-            value={selectedVendor}
-            onChange={(e) => handleVendorSelect(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.75rem 1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              color: '#e2e8f0',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              outline: 'none',
-              transition: 'all 0.2s ease'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#6366f1';
-              e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-            }}
-          >
-            <option value="" style={{ color: '#64748b' }}>
-              {loading ? 'Loading vendors...' : 'Select a vendor'}
-            </option>
-            {vendors.map((vendor) => (
-              <option 
-                key={vendor} 
-                value={vendor}
-                style={{ color: '#e2e8f0', background: '#1e293b' }}
-              >
-                {vendor}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <button
-          onClick={() => {
-            setLoading(true);
-            fetchRandomVendors();
-            onVendorChange(''); // Clear selection when refreshing
-          }}
-          disabled={loading}
+      <div>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '0.5rem', 
+          fontSize: '0.9rem', 
+          color: '#cbd5e1',
+          fontWeight: '500'
+        }}>
+          choose vendor
+        </label>
+        <select
+          value={selectedVendor}
+          onChange={(e) => handleVendorSelect(e.target.value)}
           style={{
-            background: loading ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
-            color: loading ? '#94a3b8' : '#6366f1',
-            border: '1px solid #6366f1',
+            width: '100%',
             padding: '0.75rem 1rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '8px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '0.85rem',
-            fontWeight: '500',
-            transition: 'all 0.2s ease',
-            height: 'fit-content'
+            color: '#e2e8f0',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            outline: 'none',
+            transition: 'all 0.2s ease'
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = '#6366f1';
+            e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            e.target.style.background = 'rgba(255, 255, 255, 0.05)';
           }}
         >
-          {loading ? 'Refreshing...' : 'Refresh List'}
-        </button>
+          <option value="" style={{ color: '#64748b' }}>
+            {loading ? 'Loading vendors...' : 'Select a vendor'}
+          </option>
+          {vendors.map((vendor) => (
+            <option 
+              key={vendor} 
+              value={vendor}
+              style={{ color: '#e2e8f0', background: '#1e293b' }}
+            >
+              {vendor}
+            </option>
+          ))}
+        </select>
       </div>
 
     </div>

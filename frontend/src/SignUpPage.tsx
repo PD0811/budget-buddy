@@ -7,24 +7,92 @@ const SignUpPage = () => {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
+  const [pincode, setPincode] = useState("");
   const [error, setError] = useState("");
+  const [location, setLocation] = useState<{lat: number, lng: number, city?: string, country?: string} | null>(null);
+  const [locationError, setLocationError] = useState("");
   const navigate = useNavigate();
+
+// Get user's current location
+const getCurrentLocation = (): Promise<{lat: number, lng: number, city?: string, country?: string}> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Try to get city and country from reverse geocoding
+        try {
+          const response = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data = await response.json();
+          
+          resolve({
+            lat: latitude,
+            lng: longitude,
+            city: data.city || data.locality || 'Unknown',
+            country: data.countryName || 'Unknown'
+          });
+        } catch (geoError) {
+          // If reverse geocoding fails, just return coordinates
+          resolve({
+            lat: latitude,
+            lng: longitude,
+            city: 'Unknown',
+            country: 'Unknown'
+          });
+        }
+      },
+      (error) => {
+        reject(new Error(`Location access denied: ${error.message}`));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  });
+};
 
 const handleSignUp = async (e: React.FormEvent) => {
   e.preventDefault();
   setError("");
+  setLocationError("");
+  
   try {
+    // Get user's location
+    const userLocation = await getCurrentLocation();
+    setLocation(userLocation);
+    
     const res = await fetch("http://localhost:3001/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, name, contact, password, role }),
+      body: JSON.stringify({ 
+        username, 
+        name, 
+        contact, 
+        password, 
+        role,
+        location: userLocation,
+        pincode
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     localStorage.setItem("token", data.token);
     navigate("/dashboard");
   } catch (err: any) {
-    setError(err.message);
+    if (err.message.includes('Location access denied')) {
+      setLocationError("Location access is required for security. Please allow location access and try again.");
+    } else {
+      setError(err.message);
+    }
   }
 };
 
@@ -115,6 +183,16 @@ const handleSignUp = async (e: React.FormEvent) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                style={{ width: "100%" }}
+              />
+            </label>
+            <label style={{ color: "var(--color-text-dim)", fontWeight: 600 }}>
+              Pincode:
+              <input
+                type="text"
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="Enter your pincode/zip code"
                 style={{ width: "100%" }}
               />
             </label>

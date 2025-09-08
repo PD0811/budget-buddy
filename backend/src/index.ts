@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import { Pool } from 'pg'; // <-- Make sure this is imported
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import * as nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
 // 1. Load environment variables from the .env file
 dotenv.config();
@@ -26,13 +28,41 @@ const pool = new Pool({
 // Add a quick check to see if the connection is successful
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
-    console.error('Error connecting to the database:', err);
+    console.error('❌ Error connecting to the database:', err);
+    console.error('Please check your .env file and database connection');
   } else {
-    console.log('Successfully connected to the PostgreSQL database.');
+    console.log('✅ Successfully connected to the PostgreSQL database.');
   }
+});
+
+// Handle uncaught exceptions to prevent crashes
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  console.error('Stack:', err.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 // ------------------------------------
 
+
+// --- Email Configuration ---
+// SendGrid setup
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+
+// Test SendGrid connection
+console.log('🔍 SendGrid API Key:', process.env.SENDGRID_API_KEY ? 'Present' : 'Missing');
+console.log('🔍 From Email:', process.env.SENDGRID_FROM_EMAIL || 'Not set');
+
+// Fallback nodemailer for Gmail (if you want to keep it as backup)
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD
+  }
+});
 
 // --- Middleware ---
 app.use(cors());
@@ -71,8 +101,8 @@ const authenticateToken = (req: any, res: any, next: any) => {
 // --- Authentication Routes ---
 // SIGNUP
 app.post("/api/signup", async (req, res) => {
-  const { username, name, contact, password, role } = req.body;
-  console.log('Signup request received:', { username, name, contact, role }); // Debug log
+  const { username, name, contact, password, role, location, pincode } = req.body;
+  console.log('Signup request received:', { username, name, contact, role, location, pincode }); // Debug log
   
   if (!username || !name || !contact || !password || !role) {
     return res.status(400).json({ error: "All fields are required (username, name, contact, password, role)." });
@@ -81,12 +111,27 @@ app.post("/api/signup", async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
     console.log('Password hashed successfully'); // Debug log
     
+    // Store location data if provided
+    const locationData = location ? JSON.stringify({
+      lat: location.lat,
+      lng: location.lng,
+      city: location.city || 'Unknown',
+      country: location.country || 'Unknown',
+      timestamp: new Date().toISOString()
+    }) : null;
+    
     const result = await pool.query(
-      `INSERT INTO users (user_id, name, contact, password_hash, role, created_at)
-       VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING user_id, name, role, contact`,
-      [username, name, contact, hashed, role]
+      `INSERT INTO users (user_id, name, contact, password_hash, role, location_data, pincode, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING user_id, name, role, contact`,
+      [username, name, contact, hashed, role, locationData, pincode || null]
     );
     console.log('Database insert successful:', result.rows[0]); // Debug log
+    console.log('📍 LOCATION DATA STORED:');
+    console.log(`   User: ${username} (${role})`);
+    console.log(`   Location: ${location?.city}, ${location?.country}`);
+    console.log(`   Coordinates: ${location?.lat}, ${location?.lng}`);
+    console.log(`   Timestamp: ${new Date().toISOString()}`);
+    console.log('   Raw Data:', locationData);
     
     const user = result.rows[0];
     const token = generateToken(user);
@@ -103,7 +148,9 @@ app.post("/api/signup", async (req, res) => {
 
 // LOGIN
 app.post("/api/login", async (req, res) => {
-  const { username, password, role } = req.body;
+  const { username, password, role, location } = req.body;
+  console.log('Login request received:', { username, role, location }); // Debug log
+  
   try {
     const result = await pool.query(
       "SELECT * FROM users WHERE user_id = $1 AND role = $2",
@@ -115,6 +162,28 @@ app.post("/api/login", async (req, res) => {
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: "Incorrect password." });
+
+    // Update location data if provided
+    if (location) {
+      const locationData = JSON.stringify({
+        lat: location.lat,
+        lng: location.lng,
+        city: location.city || 'Unknown',
+        country: location.country || 'Unknown',
+        timestamp: new Date().toISOString()
+      });
+      
+      await pool.query(
+        "UPDATE users SET location_data = $1 WHERE user_id = $2",
+        [locationData, username]
+      );
+      console.log('📍 LOCATION DATA UPDATED:');
+      console.log(`   User: ${username} (${role})`);
+      console.log(`   Location: ${location?.city}, ${location?.country}`);
+      console.log(`   Coordinates: ${location?.lat}, ${location?.lng}`);
+      console.log(`   Timestamp: ${new Date().toISOString()}`);
+      console.log('   Raw Data:', locationData);
+    }
 
     const token = generateToken(user);
     res.json({
@@ -135,6 +204,272 @@ app.post("/api/login", async (req, res) => {
 // PROTECTED ROUTE EXAMPLE
 app.get("/api/dashboard", authenticateToken, (req: any, res) => {
   res.json({ message: `Welcome ${req.user.name}!`, role: req.user.role });
+});
+
+// VIEW LOCATION DATA (Simple endpoint for testing)
+app.get("/api/view-locations", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        user_id,
+        name,
+        contact,
+        role,
+        location_data,
+        created_at
+      FROM users 
+      WHERE location_data IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT 10
+    `;
+    
+    const { rows } = await pool.query(query);
+    
+    console.log('📍 LOCATION DATA QUERY:');
+    console.log(`   Found ${rows.length} users with location data`);
+    
+    res.json({
+      success: true,
+      count: rows.length,
+      locations: rows.map(row => ({
+        user: row.user_id,
+        name: row.name,
+        contact: row.contact,
+        role: row.role,
+        location: row.location_data ? JSON.parse(row.location_data) : null,
+        created_at: row.created_at
+      }))
+    });
+  } catch (err) {
+    console.error('Error fetching locations:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+// --- OTP Authentication Routes ---
+
+// SEND EMAIL OTP (Only for registered users)
+app.post("/api/send-email-otp", async (req, res) => {
+  const { email, role, location } = req.body;
+  
+  if (!email || !role) {
+    return res.status(400).json({ error: "Email and role are required." });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: "Invalid email format." });
+  }
+
+  try {
+    console.log(`\n🔍 OTP REQUEST DEBUG:`);
+    console.log(`Email: ${email}`);
+    console.log(`Role: ${role}`);
+    console.log(`Location: ${location ? `${location.city}, ${location.country}` : 'Not provided'}`);
+    
+    // Check if user exists with this email and role
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE contact = $1 AND role = $2",
+      [email, role]
+    );
+
+    console.log(`User query result: ${userResult.rows.length} users found`);
+
+    if (userResult.rows.length === 0) {
+      console.log(`❌ No user found with email: ${email} and role: ${role}`);
+      return res.status(404).json({ error: "No account found with this email. Please register first." });
+    }
+
+    console.log(`✅ User found: ${userResult.rows[0].name}`);
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`Generated OTP: ${otp}`);
+    
+    // Store OTP in database with expiration (5 minutes)
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    console.log(`OTP expires at: ${expiresAt}`);
+    
+    try {
+      await pool.query(
+        `INSERT INTO otp_verifications (email, otp_code, expires_at, created_at) 
+         VALUES ($1, $2, $3, NOW()) 
+         ON CONFLICT (email) 
+         DO UPDATE SET otp_code = $2, expires_at = $3, created_at = NOW()`,
+        [email, otp, expiresAt]
+      );
+      console.log(`✅ OTP stored in database successfully`);
+    } catch (dbError) {
+      console.error(`❌ Database error storing OTP:`, dbError);
+      throw dbError;
+    }
+
+    // Send email using SendGrid (preferred) or fallback to Gmail
+    try {
+      if (process.env.SENDGRID_API_KEY) {
+        // Use SendGrid
+        const msg = {
+          to: email,
+          from: process.env.SENDGRID_FROM_EMAIL || 'noreply@budgetbuddy.com',
+          subject: 'Budget Buddy - Verification Code',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #333; text-align: center;">Budget Buddy Verification</h2>
+              <p style="font-size: 16px; color: #666;">Your verification code is:</p>
+              <div style="background-color: #f4f4f4; padding: 30px; text-align: center; margin: 20px 0; border-radius: 10px;">
+                <h1 style="color: #007bff; font-size: 36px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+              </div>
+              <p style="font-size: 14px; color: #666;">This code will expire in 5 minutes.</p>
+              <p style="font-size: 14px; color: #666;">If you didn't request this code, please ignore this email.</p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              <p style="font-size: 12px; color: #999; text-align: center;">Budget Buddy Team</p>
+            </div>
+          `
+        };
+
+        await sgMail.send(msg);
+        
+        console.log(`\n📧 SENDGRID EMAIL SENT:`);
+        console.log(`To: ${email}`);
+        console.log(`OTP Code: ${otp}`);
+        console.log(`Expires in: 5 minutes\n`);
+
+        res.json({ 
+          message: "OTP sent successfully to your email",
+          email: email.replace(/(.{2}).*(@.*)/, '$1***$2')
+        });
+      } else {
+        // Fallback to Gmail
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Budget Buddy - Verification Code',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #333; text-align: center;">Budget Buddy Verification</h2>
+              <p style="font-size: 16px; color: #666;">Your verification code is:</p>
+              <div style="background-color: #f4f4f4; padding: 30px; text-align: center; margin: 20px 0; border-radius: 10px;">
+                <h1 style="color: #007bff; font-size: 36px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+              </div>
+              <p style="font-size: 14px; color: #666;">This code will expire in 5 minutes.</p>
+              <p style="font-size: 14px; color: #666;">If you didn't request this code, please ignore this email.</p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              <p style="font-size: 12px; color: #999; text-align: center;">Budget Buddy Team</p>
+            </div>
+          `
+        };
+
+        await emailTransporter.sendMail(mailOptions);
+        
+        console.log(`\n📧 GMAIL EMAIL SENT:`);
+        console.log(`To: ${email}`);
+        console.log(`OTP Code: ${otp}`);
+        console.log(`Expires in: 5 minutes\n`);
+
+        res.json({ 
+          message: "OTP sent successfully to your email",
+          email: email.replace(/(.{2}).*(@.*)/, '$1***$2')
+        });
+      }
+    } catch (emailError: any) {
+      console.error('❌ Email sending failed:', emailError);
+      console.error('❌ Error details:', {
+        message: emailError.message,
+        code: emailError.code,
+        response: emailError.response?.body,
+        statusCode: emailError.response?.statusCode
+      });
+      
+      // Fallback to console if email fails
+      console.log(`\n📧 EMAIL FAILED - OTP in console:`);
+      console.log(`To: ${email}`);
+      console.log(`OTP Code: ${otp}`);
+      console.log(`Expires in: 5 minutes\n`);
+      
+      res.json({ 
+        message: "OTP sent successfully (check console for code - email failed)",
+        email: email.replace(/(.{2}).*(@.*)/, '$1***$2')
+      });
+    }
+
+  } catch (err: any) {
+    console.error('❌ Send email OTP error:', err);
+    console.error('Error details:', {
+      message: err.message,
+      code: err.code,
+      detail: err.detail,
+      stack: err.stack
+    });
+    res.status(500).json({ 
+      error: "Server error.", 
+      details: err.message 
+    });
+  }
+});
+
+// VERIFY EMAIL OTP (Only for registered users)
+app.post("/api/verify-email-otp", async (req, res) => {
+  const { email, otp, role, location } = req.body;
+  
+  if (!email || !otp || !role) {
+    return res.status(400).json({ error: "Email, OTP, and role are required." });
+  }
+
+  try {
+    // Check if OTP is valid and not expired
+    const otpResult = await pool.query(
+      `SELECT * FROM otp_verifications 
+       WHERE email = $1 AND otp_code = $2 AND expires_at > NOW()`,
+      [email, otp]
+    );
+
+    if (otpResult.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid or expired OTP." });
+    }
+
+    // Get user details (user must exist since we checked in send-otp)
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE contact = $1 AND role = $2",
+      [email, role]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const user = userResult.rows[0];
+    
+    // Delete the used OTP
+    await pool.query(
+      "DELETE FROM otp_verifications WHERE email = $1",
+      [email]
+    );
+
+    // Generate JWT token
+    const token = generateToken(user);
+    
+    console.log(`\n👤 USER LOGIN SUCCESSFUL:`);
+    console.log(`Email: ${email}`);
+    console.log(`User ID: ${user.user_id}`);
+    console.log(`Role: ${role}\n`);
+    
+    res.json({
+      token,
+      user: {
+        id: user.user_id,
+        name: user.name,
+        role: user.role,
+        contact: user.contact,
+      },
+      message: "Email OTP verified successfully."
+    });
+
+  } catch (err) {
+    console.error('Verify email OTP error:', err);
+    res.status(500).json({ error: "Server error." });
+  }
 });
 
 // --- Other Routes ---
@@ -506,6 +841,7 @@ app.get('/api/brands/search', async (req, res) => {
     res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
+
 
 // Get monthly spending by category vs average
 app.get('/api/reports/monthly-category-comparison', authenticateToken, async (req: any, res) => {
