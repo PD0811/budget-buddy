@@ -23,8 +23,26 @@ const AddExpense: React.FC = () => {
   });
   const [productSuggestions, setProductSuggestions] = useState<string[]>([]);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
+  const [vendorSuggestions, setVendorSuggestions] = useState<string[]>([]);
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
+  const [showVendorSuggestions, setShowVendorSuggestions] = useState(false);
+  // Fetch vendor suggestions from backend
+  const fetchVendorSuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setVendorSuggestions([]);
+      return;
+    }
+    try {
+      const response = await fetch(`http://localhost:3001/api/vendors/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const vendorNames = await response.json();
+        setVendorSuggestions(vendorNames);
+      }
+    } catch (error) {
+      console.error('Error fetching vendor suggestions:', error);
+    }
+  };
 
   // Calculate total price whenever quantity or unit price changes
   const calculateTotalPrice = (quantity: number, unitPrice: number) => {
@@ -248,10 +266,69 @@ const AddExpense: React.FC = () => {
         Add Expense
       </h2>
       
-      <VendorSelector 
-        selectedVendor={selectedVendor}
-        onVendorChange={setSelectedVendor}
-      />
+      {/* Vendor Selection (dynamic) */}
+      <div style={{ position: 'relative', marginBottom: '1rem' }}>
+        <label>
+          vendor
+          <br />
+          <input
+            type="text"
+            name="vendor"
+            value={selectedVendor}
+            onChange={e => {
+              setSelectedVendor(e.target.value);
+              fetchVendorSuggestions(e.target.value);
+              setShowVendorSuggestions(e.target.value.length > 0);
+            }}
+            onFocus={() => setShowVendorSuggestions(selectedVendor.length > 0)}
+            onBlur={() => setTimeout(() => setShowVendorSuggestions(false), 500)}
+            required
+            placeholder="Enter vendor name..."
+            style={{ width: 250 }}
+          />
+        </label>
+        {showVendorSuggestions && vendorSuggestions.length > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            width: '250px',
+            background: '#1e293b',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '6px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+          }}>
+            {vendorSuggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                onMouseDown={(e) => {
+                  e.preventDefault(); // prevents input blur from cancelling the selection
+                  setSelectedVendor(suggestion);
+                  setShowVendorSuggestions(false);
+                }}
+                style={{
+                  padding: '0.75rem',
+                  cursor: 'pointer',
+                  color: '#e2e8f0',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  fontSize: '0.9rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                {suggestion}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       
       {/* Current Item Form */}
       <div style={{ marginBottom: "1.5rem" }}>

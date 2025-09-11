@@ -842,6 +842,31 @@ app.get('/api/brands/search', async (req, res) => {
   }
 });
 
+// Search vendors endpoint
+app.get('/api/vendors/search', async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== 'string') {
+    return res.json([]);
+  }
+
+  try {
+    const query = `
+      SELECT DISTINCT vendor_name
+      FROM Vendors
+      WHERE vendor_name ILIKE $1
+      ORDER BY vendor_name
+      LIMIT 10;
+    `;
+    const { rows } = await pool.query(query, [`%${q}%`]);
+    const vendors = rows.map(row => row.vendor_name).filter(Boolean);
+    res.status(200).json(vendors);
+  } catch (err) {
+    console.error('Error searching vendors:', err);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+});
+
 
 // Get monthly spending by category vs average
 app.get('/api/reports/monthly-category-comparison', authenticateToken, async (req: any, res) => {
