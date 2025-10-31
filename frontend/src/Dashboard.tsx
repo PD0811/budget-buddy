@@ -12,7 +12,7 @@ import {
   FiArrowRight,
   FiActivity,
 } from "react-icons/fi";
-import { authenticatedFetch } from "./apiUtils";
+import { API_BASE_URL, getAuthHeaders } from "./apiUtils";
 import "./modern-ui.css";
 
 // Types
@@ -70,8 +70,9 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       // Get user info from dashboard endpoint
-      const dashboardResponse = await authenticatedFetch(
-        "/api/dashboard"
+      const dashboardResponse = await fetch(
+        `${API_BASE_URL}/api/dashboard`,
+        { headers: getAuthHeaders() }
       );
       const dashboardData = await dashboardResponse.json();
 
@@ -110,37 +111,40 @@ const Dashboard: React.FC = () => {
       // Fetch current month data
       let currentMonthData = null;
       try {
-        const currentResponse = await authenticatedFetch(
-          `/api/reports/summary?year=${currentYear}&month=${currentMonth}`
+        const currentResponse = await fetch(
+          `${API_BASE_URL}/api/reports/summary?year=${currentYear}&month=${currentMonth}`,
+          { headers: getAuthHeaders() }
         );
         currentMonthData = await currentResponse.json();
       } catch (error) {
-        console.log("No current month data available");
+        console.warn("No current month data available", error);
       }
 
       // Fetch previous month data
       let previousMonthData = null;
       try {
-        const previousResponse = await authenticatedFetch(
-          `/api/reports/summary?year=${previousYear}&month=${previousMonth}`
+        const previousResponse = await fetch(
+          `${API_BASE_URL}/api/reports/summary?year=${previousYear}&month=${previousMonth}`,
+          { headers: getAuthHeaders() }
         );
         previousMonthData = await previousResponse.json();
       } catch (error) {
-        console.log("No previous month data available");
+        console.warn("No previous month data available", error);
       }
 
       // Fetch recent expenses
       let recentExpenses = [];
       let totalExpenses = 0;
       try {
-        const expensesResponse = await authenticatedFetch(
-          "/api/expenses?page=1&limit=5"
+        const expensesResponse = await fetch(
+          `${API_BASE_URL}/api/expenses?page=1&limit=5`,
+          { headers: getAuthHeaders() }
         );
         const expensesData = await expensesResponse.json();
         recentExpenses = expensesData.expenses || [];
         totalExpenses = expensesData.pagination?.totalItems || 0;
       } catch (error) {
-        console.log("No expenses data available");
+        console.warn("No expenses data available", error);
       }
 
       setStats({
@@ -476,7 +480,7 @@ const Dashboard: React.FC = () => {
                 .map((category, index) => {
                   const percentage =
                     currentData.overallTotal > 0
-                      ? (parseFloat(category.total_spent) /
+                      ? (Number.parseFloat(category.total_spent) /
                           currentData.overallTotal) *
                         100
                       : 0;
@@ -505,7 +509,7 @@ const Dashboard: React.FC = () => {
                               fontWeight: "600",
                             }}
                           >
-                            ₹{parseFloat(category.total_spent).toFixed(2)}
+                            ₹{Number.parseFloat(category.total_spent).toFixed(2)}
                           </div>
                           <div
                             style={{ fontSize: "0.75rem", color: "#9aa4b4" }}
@@ -932,7 +936,7 @@ const Dashboard: React.FC = () => {
                   {currentData.spendingByCategory[0]?.category_name}
                 </strong>{" "}
                 this period with ₹
-                {parseFloat(
+                {Number.parseFloat(
                   currentData.spendingByCategory[0]?.total_spent || "0"
                 ).toFixed(2)}
                 .

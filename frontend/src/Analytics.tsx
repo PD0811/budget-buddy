@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { authenticatedFetch } from "./apiUtils";
+import { API_BASE_URL, getAuthHeaders } from "./apiUtils";
 import {
   PieChart,
   Pie,
@@ -97,8 +97,9 @@ const Analytics: React.FC = () => {
       // Fetch current month data
       let currentData = null;
       try {
-        const currentResponse = await authenticatedFetch(
-          `/api/reports/summary?year=${currentYear}&month=${currentMonthNum}`
+        const currentResponse = await fetch(
+          `${API_BASE_URL}/api/reports/summary?year=${currentYear}&month=${currentMonthNum}`,
+          { headers: getAuthHeaders() }
         );
         currentData = await currentResponse.json();
       } catch (error) {
@@ -108,8 +109,9 @@ const Analytics: React.FC = () => {
       // Fetch previous month data
       let previousData = null;
       try {
-        const previousResponse = await authenticatedFetch(
-          `/api/reports/summary?year=${previousYear}&month=${previousMonthNum}`
+        const previousResponse = await fetch(
+          `${API_BASE_URL}/api/reports/summary?year=${previousYear}&month=${previousMonthNum}`,
+          { headers: getAuthHeaders() }
         );
         previousData = await previousResponse.json();
       } catch (error) {
@@ -119,8 +121,9 @@ const Analytics: React.FC = () => {
       // Fetch comparison data
       let comparisonData = [];
       try {
-        const comparisonResponse = await authenticatedFetch(
-          `/api/reports/monthly-category-comparison?year=${currentYear}&month=${currentMonthNum}`
+        const comparisonResponse = await fetch(
+          `${API_BASE_URL}/api/reports/monthly-category-comparison?year=${currentYear}&month=${currentMonthNum}`,
+          { headers: getAuthHeaders() }
         );
         const comparisonResult = await comparisonResponse.json();
         comparisonData = comparisonResult.data || [];
@@ -137,8 +140,9 @@ const Analytics: React.FC = () => {
         const monthName = date.toLocaleDateString("en-US", { month: "short" });
 
         try {
-          const response = await authenticatedFetch(
-            `/api/reports/summary?year=${year}&month=${month}`
+          const response = await fetch(
+            `${API_BASE_URL}/api/reports/summary?year=${year}&month=${month}`,
+            { headers: getAuthHeaders() }
           );
           const data = await response.json();
           trends.push({
