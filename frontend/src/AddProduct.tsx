@@ -16,7 +16,7 @@ const defaultProductTypes = [
 
 const AddProduct: React.FC = () => {
   // State for product types and products
-  const [productTypes, setProductTypes] = useState<string[]>([
+  const [productTypes] = useState<string[]>([
     ...defaultProductTypes,
   ]);
   const [products, setProducts] = useState<{ name: string; type: string }[]>([

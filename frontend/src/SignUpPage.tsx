@@ -9,8 +9,8 @@ const SignUpPage = () => {
   const [password, setPassword] = useState("");
   const [pincode, setPincode] = useState("");
   const [error, setError] = useState("");
-  const [location, setLocation] = useState<{lat: number, lng: number, city?: string, country?: string} | null>(null);
-  const [locationError, setLocationError] = useState("");
+  const [, setLocation] = useState<{lat: number, lng: number, city?: string, country?: string} | null>(null);
+  const [, setLocationError] = useState("");
   const navigate = useNavigate();
 
 // Get user's current location

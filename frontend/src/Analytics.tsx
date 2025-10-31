@@ -11,16 +11,12 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
   Area,
   AreaChart,
 } from "recharts";
 import {
   FiTrendingUp,
-  FiTrendingDown,
   FiDollarSign,
-  FiCalendar,
   FiPieChart,
   FiBarChart2,
   FiActivity,
@@ -194,7 +190,7 @@ const Analytics: React.FC = () => {
         })) || [];
 
   // Prepare bar chart data for comparison
-  const barChartData = comparison.slice(0, 8).map((item, index) => ({
+  const barChartData = comparison.slice(0, 8).map((item) => ({
     category:
       item.category.length > 10
         ? item.category.substring(0, 10) + "..."

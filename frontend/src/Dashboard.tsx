@@ -9,7 +9,6 @@ import {
   FiPlus,
   FiFileText,
   FiPieChart,
-  FiClock,
   FiArrowRight,
   FiActivity,
 } from "react-icons/fi";

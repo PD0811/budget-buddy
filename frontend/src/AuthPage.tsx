@@ -12,8 +12,8 @@ const AuthPage = () => {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState<{lat: number, lng: number, city?: string, country?: string} | null>(null);
-  const [locationError, setLocationError] = useState("");
+  const [, setLocation] = useState<{lat: number, lng: number, city?: string, country?: string} | null>(null);
+  const [, setLocationError] = useState("");
   const navigate = useNavigate();
 
 // Get user's current location

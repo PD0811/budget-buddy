@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import VendorSelector from "./VendorSelector";
 
 type ExpenseItem = {
   productName: string;
