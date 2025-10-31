@@ -23,9 +23,11 @@ const AddExpense: React.FC = () => {
   });
   const [productSuggestions, setProductSuggestions] = useState<string[]>([]);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
+  const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
   const [vendorSuggestions, setVendorSuggestions] = useState<string[]>([]);
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [showVendorSuggestions, setShowVendorSuggestions] = useState(false);
   // Fetch vendor suggestions from backend
   const fetchVendorSuggestions = async (query: string) => {
@@ -86,6 +88,24 @@ const AddExpense: React.FC = () => {
     }
   };
 
+  // Fetch category suggestions from backend
+  const fetchCategorySuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setCategorySuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/categories/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const categories = await response.json();
+        setCategorySuggestions(categories);
+      }
+    } catch (error) {
+      console.error('Error fetching category suggestions:', error);
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -116,18 +136,25 @@ const AddExpense: React.FC = () => {
     } else if (name === "brand") {
       fetchBrandSuggestions(value);
       setShowBrandSuggestions(value.length > 0);
+    } else if (name === "categoryName") {
+      fetchCategorySuggestions(value);
+      setShowCategorySuggestions(value.length > 0);
     }
   };
 
   // Handle suggestion selection
-  const handleSuggestionSelect = async (field: 'productName' | 'brand', value: string) => {
+  const handleSuggestionSelect = async (field: 'productName' | 'brand' | 'categoryName', value: string) => {
   if (field === 'productName') {
     // Close dropdown immediately
     setShowProductSuggestions(false);
 
     try {
       const url = new URL(`${API_BASE_URL}/api/products/lookup`);
-      url.searchParams.set('name', value); // no brand param
+      url.searchParams.set('name', value);
+      // Pass brand if already entered to improve match accuracy
+      if (currentItem.brand && currentItem.brand.trim().length > 0) {
+        url.searchParams.set('brand', currentItem.brand.trim());
+      }
 
       const resp = await fetch(url.toString());
       if (resp.ok) {
@@ -155,9 +182,14 @@ const AddExpense: React.FC = () => {
       setCurrentItem(prev => ({ ...prev, productName: value }));
     }
   } else {
-    // If you keep brand suggestions for other reasons, just set brand and close; no lookup
-    setCurrentItem(prev => ({ ...prev, brand: value }));
-    setShowBrandSuggestions(false);
+    if (field === 'brand') {
+      // Just set brand and close; no lookup
+      setCurrentItem(prev => ({ ...prev, brand: value }));
+      setShowBrandSuggestions(false);
+    } else if (field === 'categoryName') {
+      setCurrentItem(prev => ({ ...prev, categoryName: value }));
+      setShowCategorySuggestions(false);
+    }
   }
 };
 
@@ -511,7 +543,7 @@ const AddExpense: React.FC = () => {
             </div>
           )}
         </div>
-        <div>
+        <div style={{ position: 'relative' }}>
           <label>
             Category
             <br />
@@ -520,10 +552,52 @@ const AddExpense: React.FC = () => {
               name="categoryName"
               value={currentItem.categoryName}
               onChange={handleChange}
+              onFocus={() => setShowCategorySuggestions(currentItem.categoryName.length > 0)}
+              onBlur={() => setTimeout(() => setShowCategorySuggestions(false), 200)}
               placeholder="Category (optional)"
               style={{ width: 120 }}
             />
           </label>
+          {showCategorySuggestions && categorySuggestions.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              background: '#1e293b',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '6px',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              zIndex: 1000,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+            }}>
+              {categorySuggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSuggestionSelect('categoryName', suggestion);
+                  }}
+                  style={{
+                    padding: '0.75rem',
+                    cursor: 'pointer',
+                    color: '#e2e8f0',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    fontSize: '0.9rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", gap: ".6rem" }}>
           <button

@@ -901,6 +901,32 @@ app.get('/api/brands/search', async (req, res) => {
   }
 });
 
+// Search categories endpoint
+app.get('/api/categories/search', async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== 'string') {
+    return res.json([]);
+  }
+
+  try {
+    const query = `
+      SELECT DISTINCT category_name
+      FROM Categories
+      WHERE category_name ILIKE $1
+      ORDER BY category_name
+      LIMIT 10;
+    `;
+    const { rows } = await pool.query(query, [`%${q}%`]);
+    const categories = rows.map(row => row.category_name).filter(Boolean);
+    res.status(200).json(categories);
+
+  } catch (err) {
+    console.error('Error searching categories:', err);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
+});
+
 // Search vendors endpoint
 app.get('/api/vendors/search', async (req, res) => {
   const { q } = req.query;
