@@ -114,13 +114,23 @@ const PriceComparison: React.FC = () => {
             background: "rgba(248, 113, 113, 0.1)",
             borderRadius: "8px",
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: "0.75rem",
           }}
         >
-          <FiAlertCircle size={24} />
+          <FiAlertCircle size={24} style={{ flexShrink: 0, marginTop: "0.25rem" }} />
           <div>
-            <strong>Error:</strong> {error}
+            <div style={{ marginBottom: "0.5rem" }}>
+              <strong>Unable to load price comparison:</strong>
+            </div>
+            <div style={{ marginBottom: "1rem" }}>{error}</div>
+            {error.includes("pincode") && (
+              <div style={{ fontSize: "0.85rem", color: "#fca5a5", lineHeight: "1.5" }}>
+                💡 <strong>Tip:</strong> Your location is automatically collected when you log in.
+                The pincode is derived from your GPS coordinates. Please try logging out and logging in again
+                to refresh your location data.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -556,10 +566,15 @@ const PriceComparison: React.FC = () => {
             <h4 style={{ margin: "0 0 0.5rem", fontSize: "0.95rem", color: "#67e8f9" }}>
               How This Works
             </h4>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa4b4", lineHeight: "1.6" }}>
+            <p style={{ margin: "0 0 0.75rem", fontSize: "0.85rem", color: "#9aa4b4", lineHeight: "1.6" }}>
               We compare your recent purchases with other users in your pincode ({data.pincode}) to help you find
               the best local deals. Prices are based on actual purchases made by users in your area within the
               selected time period. Save money by shopping at vendors offering the lowest prices!
+            </p>
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "#67e8f9", lineHeight: "1.5" }}>
+              📍 <strong>Automatic Location Detection:</strong> Your pincode is automatically extracted from your GPS
+              coordinates when you log in. No manual entry needed! The system uses reverse geocoding to determine
+              your postal code for accurate local price comparisons.
             </p>
           </div>
         </div>

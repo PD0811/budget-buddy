@@ -45,6 +45,43 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 // ------------------------------------
 
+// --- Helper function to get pincode from coordinates ---
+const getPincodeFromCoordinates = async (lat: number, lng: number): Promise<string | null> => {
+  try {
+    // Using Nominatim (OpenStreetMap) - free and no API key required
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'BudgetBuddy/1.0' // Required by Nominatim
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      console.warn('Failed to fetch pincode from coordinates');
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // Extract pincode from address (handles different countries/formats)
+    const pincode = data.address?.postcode || data.address?.postal_code;
+    
+    if (pincode) {
+      console.log(`✅ Pincode extracted: ${pincode} for coords (${lat}, ${lng})`);
+      return pincode;
+    }
+    
+    console.warn('No pincode found in geocoding response');
+    return null;
+  } catch (error) {
+    console.error('Error fetching pincode from coordinates:', error);
+    return null;
+  }
+};
+// ------------------------------------
+
 
 // --- Email Configuration ---
 // SendGrid setup
@@ -115,25 +152,36 @@ app.post("/api/signup", async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
     console.log('Password hashed successfully'); // Debug log
     
-    // Store location data if provided
-    const locationData = location ? JSON.stringify({
-      lat: location.lat,
-      lng: location.lng,
-      city: location.city || 'Unknown',
-      country: location.country || 'Unknown',
-      timestamp: new Date().toISOString()
-    }) : null;
+    // Store location data if provided and extract pincode from coordinates
+    let locationData = null;
+    let derivedPincode = pincode || null;
+    
+    if (location && location.lat && location.lng) {
+      locationData = JSON.stringify({
+        lat: location.lat,
+        lng: location.lng,
+        city: location.city || 'Unknown',
+        country: location.country || 'Unknown',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Try to get pincode from coordinates if not provided
+      if (!derivedPincode) {
+        derivedPincode = await getPincodeFromCoordinates(location.lat, location.lng);
+      }
+    }
     
     const result = await pool.query(
       `INSERT INTO users (user_id, name, contact, password_hash, role, location_data, pincode, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING user_id, name, role, contact`,
-      [username, name, contact, hashed, role, locationData, pincode || null]
+      [username, name, contact, hashed, role, locationData, derivedPincode]
     );
     console.log('Database insert successful:', result.rows[0]); // Debug log
     console.log('📍 LOCATION DATA STORED:');
     console.log(`   User: ${username} (${role})`);
     console.log(`   Location: ${location?.city}, ${location?.country}`);
     console.log(`   Coordinates: ${location?.lat}, ${location?.lng}`);
+    console.log(`   Pincode: ${derivedPincode || 'Not available'}`);
     console.log(`   Timestamp: ${new Date().toISOString()}`);
     console.log('   Raw Data:', locationData);
     
@@ -167,8 +215,8 @@ app.post("/api/login", async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: "Incorrect password." });
 
-    // Update location data if provided
-    if (location) {
+    // Update location data and pincode if provided
+    if (location && location.lat && location.lng) {
       const locationData = JSON.stringify({
         lat: location.lat,
         lng: location.lng,
@@ -177,14 +225,21 @@ app.post("/api/login", async (req, res) => {
         timestamp: new Date().toISOString()
       });
       
+      // Get pincode from coordinates if user doesn't have one
+      let pincodeToUpdate = user.pincode;
+      if (!pincodeToUpdate) {
+        pincodeToUpdate = await getPincodeFromCoordinates(location.lat, location.lng);
+      }
+      
       await pool.query(
-        "UPDATE users SET location_data = $1 WHERE user_id = $2",
-        [locationData, username]
+        "UPDATE users SET location_data = $1, pincode = $2 WHERE user_id = $3",
+        [locationData, pincodeToUpdate, username]
       );
       console.log('📍 LOCATION DATA UPDATED:');
       console.log(`   User: ${username} (${role})`);
       console.log(`   Location: ${location?.city}, ${location?.country}`);
       console.log(`   Coordinates: ${location?.lat}, ${location?.lng}`);
+      console.log(`   Pincode: ${pincodeToUpdate || 'Not available'}`);
       console.log(`   Timestamp: ${new Date().toISOString()}`);
       console.log('   Raw Data:', locationData);
     }
@@ -1096,7 +1151,7 @@ app.get('/api/price-comparison', authenticateToken, async (req: any, res) => {
 
     if (userRows.length === 0 || !userRows[0].pincode) {
       return res.status(400).json({ 
-        error: 'Your pincode is not set. Please update your profile to use price comparison.' 
+        error: 'Your pincode could not be determined from your location. Please log in again or contact support.' 
       });
     }
 
