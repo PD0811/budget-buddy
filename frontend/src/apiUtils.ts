@@ -1,6 +1,6 @@
 // API utility functions for handling authenticated requests
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -19,7 +19,7 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch(url, {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     headers: {
       ...getAuthHeaders(),

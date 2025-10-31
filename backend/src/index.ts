@@ -16,13 +16,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // --- DATABASE CONNECTION SETUP ---
-// 2. Create a new connection pool using the credentials from .env
+// 2. Create a new connection pool using the DATABASE_URL from Render
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: Number(process.env.DB_PORT), // The port needs to be a number
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Required for Render's Postgres connections
+  }
 });
 
 // Add a quick check to see if the connection is successful
@@ -65,7 +64,11 @@ const emailTransporter = nodemailer.createTransport({
 });
 
 // --- Middleware ---
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CLIENT_URL, // We will set this in Render
+  credentials: true, // If you use cookies/sessions
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- Authentication Helper Functions ---
