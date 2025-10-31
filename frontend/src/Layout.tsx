@@ -12,6 +12,7 @@ import {
   FiFileText,
   FiLogOut,
   FiChevronRight,
+  FiTrendingDown,
 } from "react-icons/fi";
 import "./modern-ui.css";
 
@@ -132,6 +133,12 @@ const Layout: React.FC = () => {
           icon: <FiFileText />,
         },
       ],
+    },
+    {
+      key: "price-comparison",
+      label: "Price Comparison",
+      icon: <FiTrendingDown />,
+      action: () => navigate("/price-comparison"),
     },
   ];
 

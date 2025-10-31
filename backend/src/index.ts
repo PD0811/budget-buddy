@@ -1080,6 +1080,144 @@ app.post('/api/expenses/batch', authenticateToken, async (req: any, res) => {
   }
 });
 
+// Price comparison with local users
+app.get('/api/price-comparison', authenticateToken, async (req: any, res) => {
+  const userId = req.user.id;
+  const { days = 30 } = req.query; // Look back period for "recent" purchases
+
+  try {
+    // Get current user's pincode
+    const userQuery = `
+      SELECT pincode 
+      FROM users 
+      WHERE user_id = $1 AND pincode IS NOT NULL
+    `;
+    const { rows: userRows } = await pool.query(userQuery, [userId]);
+
+    if (userRows.length === 0 || !userRows[0].pincode) {
+      return res.status(400).json({ 
+        error: 'Your pincode is not set. Please update your profile to use price comparison.' 
+      });
+    }
+
+    const userPincode = userRows[0].pincode;
+
+    // Get user's recent purchases (last X days)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - Number(days));
+
+    const recentPurchasesQuery = `
+      SELECT DISTINCT
+        p.product_id,
+        p.product_name,
+        p.brand,
+        e.unit_price as my_unit_price,
+        v.vendor_name as my_vendor,
+        e.expense_date as my_purchase_date
+      FROM Expenses e
+      JOIN Products p ON e.product_id = p.product_id
+      JOIN Vendors v ON e.vendor_id = v.vendor_id
+      WHERE e.user_id = $1 
+        AND e.expense_date >= $2
+      ORDER BY e.expense_date DESC
+    `;
+    const { rows: myPurchases } = await pool.query(recentPurchasesQuery, [userId, cutoffDate.toISOString()]);
+
+    if (myPurchases.length === 0) {
+      return res.status(200).json({
+        message: 'No recent purchases found in the last ' + days + ' days',
+        comparisons: []
+      });
+    }
+
+    // For each product, find the cheapest vendor in the same pincode
+    const comparisons = [];
+    
+    for (const purchase of myPurchases) {
+      const priceComparisonQuery = `
+        SELECT 
+          v.vendor_name,
+          MIN(e.unit_price) as min_unit_price,
+          COUNT(e.expense_id) as purchase_count,
+          MAX(e.expense_date) as last_purchase_date,
+          ROUND(AVG(e.unit_price)::numeric, 2) as avg_unit_price
+        FROM Expenses e
+        JOIN Vendors v ON e.vendor_id = v.vendor_id
+        JOIN users u ON e.user_id = u.user_id
+        WHERE e.product_id = $1
+          AND u.pincode = $2
+          AND e.expense_date >= $3
+        GROUP BY v.vendor_id, v.vendor_name
+        ORDER BY min_unit_price ASC
+        LIMIT 5
+      `;
+      
+      const { rows: vendorPrices } = await pool.query(priceComparisonQuery, [
+        purchase.product_id,
+        userPincode,
+        cutoffDate.toISOString()
+      ]);
+
+      if (vendorPrices.length > 0) {
+        const cheapestVendor = vendorPrices[0];
+        const savings = purchase.my_unit_price - parseFloat(cheapestVendor.min_unit_price);
+        const savingsPercent = purchase.my_unit_price > 0 
+          ? parseFloat(((savings / purchase.my_unit_price) * 100).toFixed(1))
+          : 0;
+
+        comparisons.push({
+          product_name: purchase.product_name,
+          brand: purchase.brand || 'N/A',
+          my_purchase: {
+            vendor: purchase.my_vendor,
+            unit_price: parseFloat(purchase.my_unit_price),
+            purchase_date: purchase.my_purchase_date
+          },
+          cheapest_option: {
+            vendor: cheapestVendor.vendor_name,
+            min_unit_price: parseFloat(cheapestVendor.min_unit_price),
+            avg_unit_price: parseFloat(cheapestVendor.avg_unit_price),
+            purchase_count: parseInt(cheapestVendor.purchase_count),
+            last_seen: cheapestVendor.last_purchase_date
+          },
+          savings: {
+            amount: parseFloat(savings.toFixed(2)),
+            percentage: savingsPercent,
+            is_best_deal: savings <= 0
+          },
+          alternative_vendors: vendorPrices.slice(1).map(v => ({
+            vendor: v.vendor_name,
+            min_unit_price: parseFloat(v.min_unit_price),
+            avg_unit_price: parseFloat(v.avg_unit_price),
+            purchase_count: parseInt(v.purchase_count)
+          }))
+        });
+      }
+    }
+
+    // Calculate overall stats
+    const totalSavings = comparisons.reduce((sum, c) => sum + (c.savings.amount > 0 ? c.savings.amount : 0), 0);
+    const bestDeals = comparisons.filter(c => c.savings.is_best_deal).length;
+    const potentialSavings = comparisons.filter(c => c.savings.amount > 0).length;
+
+    res.status(200).json({
+      pincode: userPincode,
+      analysis_period_days: Number(days),
+      total_products_analyzed: comparisons.length,
+      summary: {
+        items_at_best_price: bestDeals,
+        items_with_cheaper_options: potentialSavings,
+        total_potential_savings: parseFloat(totalSavings.toFixed(2))
+      },
+      comparisons: comparisons
+    });
+
+  } catch (err) {
+    console.error('Error in price comparison:', err);
+    res.status(500).json({ error: 'An internal server error occurred during price comparison.' });
+  }
+});
+
 
 // --- Start the Server ---
 app.listen(PORT, () => {
