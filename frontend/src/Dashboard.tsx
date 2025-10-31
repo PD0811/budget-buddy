@@ -12,7 +12,7 @@ import {
   FiArrowRight,
   FiActivity,
 } from "react-icons/fi";
-import { API_BASE_URL, authenticatedFetch } from "./apiUtils";
+import { authenticatedFetch } from "./apiUtils";
 import "./modern-ui.css";
 
 // Types
@@ -71,7 +71,7 @@ const Dashboard: React.FC = () => {
     try {
       // Get user info from dashboard endpoint
       const dashboardResponse = await authenticatedFetch(
-        "${API_BASE_URL}/api/dashboard"
+        "/api/dashboard"
       );
       const dashboardData = await dashboardResponse.json();
 
@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
       let currentMonthData = null;
       try {
         const currentResponse = await authenticatedFetch(
-          `${API_BASE_URL}/api/reports/summary?year=${currentYear}&month=${currentMonth}`
+          `/api/reports/summary?year=${currentYear}&month=${currentMonth}`
         );
         currentMonthData = await currentResponse.json();
       } catch (error) {
@@ -122,7 +122,7 @@ const Dashboard: React.FC = () => {
       let previousMonthData = null;
       try {
         const previousResponse = await authenticatedFetch(
-          `${API_BASE_URL}/api/reports/summary?year=${previousYear}&month=${previousMonth}`
+          `/api/reports/summary?year=${previousYear}&month=${previousMonth}`
         );
         previousMonthData = await previousResponse.json();
       } catch (error) {
@@ -134,7 +134,7 @@ const Dashboard: React.FC = () => {
       let totalExpenses = 0;
       try {
         const expensesResponse = await authenticatedFetch(
-          "${API_BASE_URL}/api/expenses?page=1&limit=5"
+          "/api/expenses?page=1&limit=5"
         );
         const expensesData = await expensesResponse.json();
         recentExpenses = expensesData.expenses || [];
