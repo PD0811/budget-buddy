@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "./apiUtils";
 
 type Expense = {
   id: number;
@@ -30,7 +31,7 @@ const Expenses: React.FC = () => {
   const fetchExpenses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:3001/api/expenses", {
+      const response = await fetch(`${API_BASE_URL}/api/expenses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -105,7 +106,7 @@ const Expenses: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:3001/api/expenses", {
+      const response = await fetch(`${API_BASE_URL}/api/expenses`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

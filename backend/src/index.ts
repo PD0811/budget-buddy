@@ -65,12 +65,13 @@ const emailTransporter = nodemailer.createTransport({
 
 // --- Middleware ---
 const corsOptions = {
-  origin: process.env.CLIENT_URL, // We will set this in Render
-  credentials: true, // If you use cookies/sessions
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Add fallback for local development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 app.use(express.json());
-
 // --- Authentication Helper Functions ---
 const JWT_SECRET: string = process.env.JWT_SECRET || 'your-secret-key';
 

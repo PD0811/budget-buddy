@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "./apiUtils";
 
 const SignUpPage = () => {
   const [role, setRole] = useState<"customer" | "vendor">("customer");
@@ -70,7 +71,7 @@ const handleSignUp = async (e: React.FormEvent) => {
     const userLocation = await getCurrentLocation();
     setLocation(userLocation);
     
-    const res = await fetch("http://localhost:3001/api/signup", {
+    const res = await fetch(`${API_BASE_URL}/api/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL, authenticatedFetch } from "./apiUtils";
 import {
   PieChart,
   Pie,
@@ -24,7 +25,6 @@ import {
   FiArrowDown,
   FiMinus,
 } from "react-icons/fi";
-import { authenticatedFetch } from "./apiUtils";
 import "./modern-ui.css";
 
 // Types
@@ -98,7 +98,7 @@ const Analytics: React.FC = () => {
       let currentData = null;
       try {
         const currentResponse = await authenticatedFetch(
-          `http://localhost:3001/api/reports/summary?year=${currentYear}&month=${currentMonthNum}`
+          `${API_BASE_URL}/api/reports/summary?year=${currentYear}&month=${currentMonthNum}`
         );
         currentData = await currentResponse.json();
       } catch (error) {
@@ -109,7 +109,7 @@ const Analytics: React.FC = () => {
       let previousData = null;
       try {
         const previousResponse = await authenticatedFetch(
-          `http://localhost:3001/api/reports/summary?year=${previousYear}&month=${previousMonthNum}`
+          `${API_BASE_URL}/api/reports/summary?year=${previousYear}&month=${previousMonthNum}`
         );
         previousData = await previousResponse.json();
       } catch (error) {
@@ -120,7 +120,7 @@ const Analytics: React.FC = () => {
       let comparisonData = [];
       try {
         const comparisonResponse = await authenticatedFetch(
-          `http://localhost:3001/api/reports/monthly-category-comparison?year=${currentYear}&month=${currentMonthNum}`
+          `${API_BASE_URL}/api/reports/monthly-category-comparison?year=${currentYear}&month=${currentMonthNum}`
         );
         const comparisonResult = await comparisonResponse.json();
         comparisonData = comparisonResult.data || [];
@@ -138,7 +138,7 @@ const Analytics: React.FC = () => {
 
         try {
           const response = await authenticatedFetch(
-            `http://localhost:3001/api/reports/summary?year=${year}&month=${month}`
+            `${API_BASE_URL}/api/reports/summary?year=${year}&month=${month}`
           );
           const data = await response.json();
           trends.push({

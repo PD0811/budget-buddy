@@ -1,6 +1,7 @@
 // Replace all code in ReportMonthly.tsx with this:
 
 import React, { useState } from "react";
+import { API_BASE_URL } from "./apiUtils";
 import "./modern-ui.css";
 
 // --- Type Definitions (no changes here) ---
@@ -43,7 +44,7 @@ const ReportMonthly: React.FC = () => {
     setExpandedCategoryId(null);
 
     try {
-      const url = `http://localhost:3001/api/reports/summary?year=${selectedYear}&month=${selectedMonth}`;
+      const url = `${API_BASE_URL}/api/reports/summary?year=${selectedYear}&month=${selectedMonth}`;
       const token = localStorage.getItem('token');
       const response = await fetch(url, {
         headers: {

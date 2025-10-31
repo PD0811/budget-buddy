@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "./apiUtils";
 
 type ExpenseItem = {
   productName: string;
@@ -33,7 +34,7 @@ const AddExpense: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:3001/api/vendors/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${API_BASE_URL}/api/vendors/search?q=${encodeURIComponent(query)}`);
       if (response.ok) {
         const vendorNames = await response.json();
         setVendorSuggestions(vendorNames);
@@ -56,7 +57,7 @@ const AddExpense: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/products/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
       if (response.ok) {
         const productNames = await response.json();
         // API now returns only product names directly
@@ -75,7 +76,7 @@ const AddExpense: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/brands/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${API_BASE_URL}/api/brands/search?q=${encodeURIComponent(query)}`);
       if (response.ok) {
         const brands = await response.json();
         setBrandSuggestions(brands);
@@ -125,7 +126,7 @@ const AddExpense: React.FC = () => {
     setShowProductSuggestions(false);
 
     try {
-      const url = new URL('http://localhost:3001/api/products/lookup');
+      const url = new URL(`${API_BASE_URL}/api/products/lookup`);
       url.searchParams.set('name', value); // no brand param
 
       const resp = await fetch(url.toString());
@@ -207,7 +208,7 @@ const AddExpense: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:3001/api/expenses/batch", {
+      const response = await fetch(`${API_BASE_URL}/api/expenses/batch`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
