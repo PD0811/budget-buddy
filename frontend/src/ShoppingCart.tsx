@@ -5,6 +5,7 @@ type CartItem = {
   productName: string;
   productId?: string | null;
   brand?: string;
+  sourceVendor?: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -57,14 +58,24 @@ const ShoppingCart: React.FC = () => {
         }
       }
 
-      // Get last price for this product for current user
-      let lastPrice = 0;
-      if (productId) {
-        const priceRes = await fetch(`${API_BASE_URL}/api/products/last-price?product_id=${encodeURIComponent(productId)}`, { headers: getAuthHeaders() });
+      // Get last price for this product for current user. Try product_id first; if not present,
+      // call by name so the backend can fallback to recent user expenses.
+  let lastPrice = 0;
+  let vendorName: string | null = null;
+      try {
+        const params = productId
+          ? `product_id=${encodeURIComponent(productId)}&include_peers=true`
+          : `name=${encodeURIComponent(name)}&include_peers=true`;
+        const priceRes = await fetch(`${API_BASE_URL}/api/products/last-price?${params}`, { headers: getAuthHeaders() });
         if (priceRes.ok) {
           const priceData = await priceRes.json();
-          if (priceData && priceData.last_unit_price != null) lastPrice = Number(priceData.last_unit_price) || 0;
+          if (priceData && priceData.last_unit_price != null) {
+            lastPrice = Number(priceData.last_unit_price) || 0;
+            vendorName = priceData.vendor || null;
+          }
         }
+      } catch (err) {
+        console.error('Error fetching last price', err);
       }
 
       // Add to cart with default quantity 1
@@ -73,6 +84,7 @@ const ShoppingCart: React.FC = () => {
           productName: name,
           productId: productId || null,
           brand,
+          sourceVendor: vendorName || null,
           quantity: 1,
           unitPrice: lastPrice,
           totalPrice: lastPrice * 1,
@@ -144,14 +156,26 @@ const ShoppingCart: React.FC = () => {
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600 }}>{item.productName}</div>
               <div style={{ color: '#94a3b8', fontSize: '.9rem' }}>{item.brand || ''}</div>
+              {item.sourceVendor && (
+                <div style={{ color: '#a1a1aa', fontSize: '.8rem' }}>Price source: {item.sourceVendor}</div>
+              )}
             </div>
             <div>
               <input type="number" min={1} value={item.quantity} onChange={e => updateItem(idx, { quantity: Number(e.target.value) || 1 })} style={{ width: 80 }} />
             </div>
             <div>
-              <input type="text" value={item.unitPrice.toFixed(2)} onChange={e => updateItem(idx, { unitPrice: parseFloat(e.target.value) || 0 })} style={{ width: 110 }} />
+              <input
+                type="number"
+                step="0.0001"
+                value={String(item.unitPrice)}
+                onChange={e => {
+                  const n = Number(e.target.value);
+                  updateItem(idx, { unitPrice: isNaN(n) ? 0 : n });
+                }}
+                style={{ width: 110 }}
+              />
             </div>
-            <div style={{ width: 120, textAlign: 'right', fontWeight: 700 }}>₹{item.totalPrice.toFixed(2)}</div>
+            <div style={{ width: 120, textAlign: 'right', fontWeight: 700 }}>₹{(item.totalPrice < 1 ? item.totalPrice.toFixed(4) : item.totalPrice.toFixed(2))}</div>
             <div>
               <button onClick={() => removeItem(idx)} style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '.4rem .6rem', borderRadius: 6 }}>Remove</button>
             </div>

@@ -956,6 +956,7 @@ app.get('/api/vendors/search', async (req, res) => {
 app.get('/api/products/last-price', authenticateToken, async (req: any, res) => {
   const userId = req.user.id;
   const { product_id, name, brand } = req.query;
+  const includePeers = String(req.query.include_peers || req.query.includePeers || '').toLowerCase() === 'true';
 
   try {
     let resolvedProductId = product_id ? String(product_id) : null;
@@ -973,26 +974,53 @@ app.get('/api/products/last-price', authenticateToken, async (req: any, res) => 
       if (rows.length > 0) resolvedProductId = rows[0].product_id;
     }
 
+    // If still not found by exact product record, try a fallback: find the most recent expense
+    // for this user where the product name matches (ILIKE). This helps when product lookup
+    // used different brand or product variants but user has prior expenses.
+    if (!resolvedProductId && name) {
+      const fallbackQ = `
+        SELECT e.product_id, e.unit_price, e.expense_date, v.vendor_name
+        FROM Expenses e
+        JOIN Products p ON e.product_id = p.product_id
+        LEFT JOIN Vendors v ON e.vendor_id = v.vendor_id
+        WHERE ${includePeers ? '' : 'e.user_id = $1 AND'} p.product_name ILIKE $2
+        ORDER BY e.expense_date DESC, e.expense_id DESC
+        LIMIT 1
+      `;
+      const fbParams = includePeers ? [`%${String(name)}%`] : [userId, `%${String(name)}%`];
+      const { rows: fb } = await pool.query(fallbackQ, fbParams as any[]);
+      if (fb.length > 0) {
+        resolvedProductId = fb[0].product_id;
+        // Return the price directly from this expense (most reliable)
+        const unit = fb[0].unit_price;
+        const numeric = typeof unit === 'number' ? unit : parseFloat(unit);
+        return res.json({ last_unit_price: numeric, vendor: fb[0].vendor_name || null, date: fb[0].expense_date });
+      }
+    }
+
     if (!resolvedProductId) {
       return res.status(400).json({ error: 'product_id or (name and optional brand) required' });
     }
 
+    // When includePeers is true, we search across all users; otherwise restrict to the current user
     const priceQuery = `
       SELECT e.unit_price, v.vendor_name, e.expense_date
       FROM Expenses e
       JOIN Vendors v ON e.vendor_id = v.vendor_id
-      WHERE e.user_id = $1 AND e.product_id = $2
+      WHERE e.product_id = $1
+      ${includePeers ? '' : 'AND e.user_id = $2'}
       ORDER BY e.expense_date DESC, e.expense_id DESC
       LIMIT 1
     `;
 
-    const { rows: priceRows } = await pool.query(priceQuery, [userId, resolvedProductId]);
+    const priceParams = includePeers ? [resolvedProductId] : [resolvedProductId, userId];
+    const { rows: priceRows } = await pool.query(priceQuery, priceParams as any[]);
     if (priceRows.length === 0) {
       return res.status(200).json({ last_unit_price: null });
     }
 
     const r = priceRows[0];
-    res.json({ last_unit_price: parseFloat(r.unit_price), vendor: r.vendor_name, date: r.expense_date });
+    res.json({ last_unit_price: parseFloat(r.unit_price), vendor: r.vendor_name || null, date: r.expense_date });
 
   } catch (err) {
     console.error('Error fetching last price:', err);
