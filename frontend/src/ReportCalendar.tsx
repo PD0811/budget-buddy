@@ -1,7 +1,6 @@
-// Replace all the code in ReportCalendar.tsx with this code
-
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
+import { API_BASE_URL, getAuthHeaders } from './apiUtils';
 import './ReportCalendar.css'; 
 
 type DailyTotals = {
@@ -31,19 +30,24 @@ const ReportCalendar: React.FC = () => {
       const month = activeDate.getMonth() + 1;
 
       try {
-        const url = `http://localhost:3001/api/reports/calendar?year=${year}&month=${month}`;
-        const token = localStorage.getItem('token');
+        const url = `${API_BASE_URL}/api/reports/calendar?year=${year}&month=${month}`;
+        console.log('Fetching calendar data from:', url);
         const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: getAuthHeaders()
         });
-        if (!response.ok) throw new Error("Failed to fetch calendar data.");
+        console.log('Calendar response status:', response.status);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Calendar fetch failed:', errorText);
+          throw new Error("Failed to fetch calendar data.");
+        }
         
         const data: DailyTotals = await response.json();
+        console.log('Calendar data received:', data);
+        console.log('Number of days with expenses:', Object.keys(data).length);
         setDailyData(data);
       } catch (error) {
-        console.error(error);
+        console.error('Calendar data error:', error);
         setDailyData({});
       } finally {
         setIsLoading(false);
@@ -56,12 +60,9 @@ const ReportCalendar: React.FC = () => {
       const month = activeDate.getMonth() + 1;
 
       try {
-        const url = `http://localhost:3001/api/reports/monthly-category-comparison?year=${year}&month=${month}`;
-        const token = localStorage.getItem('token');
+        const url = `${API_BASE_URL}/api/reports/monthly-category-comparison?year=${year}&month=${month}`;
         const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: getAuthHeaders()
         });
         if (!response.ok) throw new Error("Failed to fetch category data.");
         

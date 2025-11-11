@@ -57,6 +57,7 @@ const Dashboard: React.FC = () => {
     "current"
   );
   const [greeting, setGreeting] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Generate greeting based on time of day
   const getGreeting = () => {
@@ -100,11 +101,10 @@ const Dashboard: React.FC = () => {
         }
       }
 
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = selectedDate.getFullYear();
+      const currentMonth = selectedDate.getMonth() + 1;
 
-      const previousDate = new Date(currentYear, currentMonth - 2, 1);
+      const previousDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
       const previousYear = previousDate.getFullYear();
       const previousMonth = previousDate.getMonth() + 1;
 
@@ -164,7 +164,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [selectedDate]);
 
   const currentData =
     selectedPeriod === "current" ? stats.currentMonth : stats.previousMonth;
@@ -238,13 +238,62 @@ const Dashboard: React.FC = () => {
               flexWrap: "wrap",
             }}
           >
-            <span
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(newDate.getMonth() - 1);
+                setSelectedDate(newDate);
+              }}
               style={{
-                fontSize: "0.85rem",
-                color: "#9aa4b4",
-                marginRight: "0.5rem",
+                padding: "0.4rem 0.8rem",
+                background: "rgba(99, 102, 241, 0.2)",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
               }}
             >
+              ← Prev
+            </button>
+            <span
+              style={{
+                fontSize: "0.9rem",
+                color: "#e2e8f0",
+                fontWeight: "600",
+                minWidth: "120px",
+                textAlign: "center",
+              }}
+            >
+              {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate);
+                newDate.setMonth(newDate.getMonth() + 1);
+                setSelectedDate(newDate);
+              }}
+              style={{
+                padding: "0.4rem 0.8rem",
+                background: "rgba(99, 102, 241, 0.2)",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+              }}
+            >
+              Next →
+            </button>
+            <span style={{ fontSize: "0.85rem", color: "#9aa4b4", marginLeft: "1rem" }}>
               View:
             </span>
             <button
@@ -263,7 +312,7 @@ const Dashboard: React.FC = () => {
                 fontWeight: "500",
               }}
             >
-              Current Month
+              Selected
             </button>
             <button
               onClick={() => setSelectedPeriod("previous")}
@@ -281,7 +330,7 @@ const Dashboard: React.FC = () => {
                 fontWeight: "500",
               }}
             >
-              Previous Month
+              Prev Month
             </button>
           </div>
         </div>

@@ -9,10 +9,6 @@ import SignUpPage from "./SignUpPage";
 import Layout from "./Layout";
 import Dashboard from "./Dashboard";
 import AddExpense from "./AddExpense";
-import ManageExpenses from "./ManageExpenses";
-import AddProduct from "./AddProduct";
-import AddProductType from "./AddProductType";
-import AddVendor from "./AddVendor";
 import Reports from "./Reports";
 import ReportPrediction from "./ReportPrediction";
 import ReportMonthly from "./ReportMonthly";
@@ -35,10 +31,6 @@ function App() {
             element={<Navigate to="/expenses/add" replace />}
           />
           <Route path="/expenses/add" element={<AddExpense />} />
-          <Route path="/expenses/manage" element={<ManageExpenses />} />
-          <Route path="/product/add" element={<AddProduct />} />
-          <Route path="/product/add-type" element={<AddProductType />} />
-          <Route path="/product/add-vendor" element={<AddVendor />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/prediction" element={<ReportPrediction />} />
           <Route path="/reports/monthly" element={<ReportMonthly />} />

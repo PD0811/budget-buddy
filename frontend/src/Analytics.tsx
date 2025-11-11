@@ -82,15 +82,15 @@ const Analytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<"current" | "previous">(
     "current"
   );
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Fetch analytics data
   const fetchAnalyticsData = async () => {
     try {
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonthNum = currentDate.getMonth() + 1;
+      const currentYear = selectedDate.getFullYear();
+      const currentMonthNum = selectedDate.getMonth() + 1;
 
-      const previousDate = new Date(currentYear, currentMonthNum - 2, 1);
+      const previousDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
       const previousYear = previousDate.getFullYear();
       const previousMonthNum = previousDate.getMonth() + 1;
 
@@ -177,7 +177,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     fetchAnalyticsData();
-  }, []);
+  }, [selectedDate]);
 
   // Prepare pie chart data
   const pieChartData =
@@ -374,20 +374,74 @@ const Analytics: React.FC = () => {
           <div
             style={{
               display: "flex",
-              gap: "0.5rem",
+              gap: "1rem",
               alignItems: "center",
               flexWrap: "wrap",
             }}
           >
-            <span
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <button
+                onClick={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(newDate.getMonth() - 1);
+                  setSelectedDate(newDate);
+                }}
+                style={{
+                  padding: "0.4rem 0.8rem",
+                  background: "rgba(16, 185, 129, 0.2)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "0.8rem",
+                  fontWeight: "500",
+                }}
+              >
+                ← Prev
+              </button>
+              <span style={{ fontSize: "0.9rem", color: "#e5e7eb", fontWeight: "500" }}>
+                {selectedDate.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+              <button
+                onClick={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(newDate.getMonth() + 1);
+                  setSelectedDate(newDate);
+                }}
+                style={{
+                  padding: "0.4rem 0.8rem",
+                  background: "rgba(16, 185, 129, 0.2)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "0.8rem",
+                  fontWeight: "500",
+                }}
+              >
+                Next →
+              </button>
+            </div>
+            <div
               style={{
-                fontSize: "0.85rem",
-                color: "#9aa4b4",
-                marginRight: "0.5rem",
+                display: "flex",
+                gap: "0.5rem",
+                alignItems: "center",
+                flexWrap: "wrap",
               }}
             >
-              Period:
-            </span>
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  color: "#9aa4b4",
+                  marginRight: "0.5rem",
+                }}
+              >
+                Period:
+              </span>
             <button
               onClick={() => setSelectedPeriod("current")}
               style={{
@@ -424,6 +478,7 @@ const Analytics: React.FC = () => {
             >
               Previous Month
             </button>
+            </div>
           </div>
         </div>
       </div>

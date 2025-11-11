@@ -4,8 +4,6 @@ import {
   FiGrid,
   FiDollarSign,
   FiPackage,
-  FiLayers,
-  FiTruck,
   FiBarChart2,
   FiActivity,
   FiCalendar,
@@ -73,34 +71,9 @@ const Layout: React.FC = () => {
     },
     {
       key: "expenses",
-      label: "Expenses",
+      label: "Add Expense",
       icon: <FiDollarSign />,
-      items: [
-        {
-          label: "Add Expense",
-          path: "/expenses/add",
-          icon: <FiDollarSign />,
-        },
-        {
-          label: "Manage Expenses",
-          path: "/expenses/manage",
-          icon: <FiDollarSign />,
-        },
-      ],
-    },
-    {
-      key: "products",
-      label: "Products",
-      icon: <FiPackage />,
-      items: [
-        { label: "Add Product", path: "/product/add", icon: <FiPackage /> },
-        {
-          label: "Add Product Type",
-          path: "/product/add-type",
-          icon: <FiLayers />,
-        },
-        { label: "Add Vendor", path: "/product/add-vendor", icon: <FiTruck /> },
-      ],
+      action: () => navigate("/expenses/add"),
     },
     {
       key: "reports",
