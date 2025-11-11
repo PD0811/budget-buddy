@@ -8,6 +8,7 @@ type ExpenseItem = {
   totalPrice: number;
   brand: string;
   categoryName: string;
+  unit?: string; // cosmetic unit (e.g., kg, pcs) - not persisted to backend
 };
 
 const AddExpense: React.FC = () => {
@@ -20,12 +21,14 @@ const AddExpense: React.FC = () => {
     totalPrice: 0,
     brand: "",
     categoryName: "",
+    unit: "",
   });
   const [productSuggestions, setProductSuggestions] = useState<string[]>([]);
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
   const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
   const [vendorSuggestions, setVendorSuggestions] = useState<string[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showUnitCustom, setShowUnitCustom] = useState(false);
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -226,7 +229,9 @@ const AddExpense: React.FC = () => {
       totalPrice: 0, // Will be calculated automatically
       brand: "",
       categoryName: "",
+      unit: "",
     });
+    setShowUnitCustom(false);
   };
 
   const cancelEdit = () => {
@@ -238,7 +243,9 @@ const AddExpense: React.FC = () => {
       totalPrice: 0,
       brand: "",
       categoryName: "",
+      unit: "",
     });
+    setShowUnitCustom(false);
   };
 
   const editItem = (index: number) => {
@@ -247,6 +254,8 @@ const AddExpense: React.FC = () => {
     setCurrentItem({ ...item });
     setEditingIndex(index);
     // Put focus on product input is optional; left to browser default
+    const presets = ['pcs','kg','g','l','ml','pack','box','dozen'];
+    setShowUnitCustom(item.unit !== undefined && item.unit !== '' && !presets.includes(item.unit));
   };
 
   const removeItemFromList = (index: number) => {
@@ -270,6 +279,9 @@ const AddExpense: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      // Strip cosmetic fields (like unit) before sending to backend
+      const payloadItems = expenseItems.map(({ unit, ...rest }) => rest);
+
       const response = await fetch(`${API_BASE_URL}/api/expenses/batch`, {
         method: "POST",
         headers: { 
@@ -277,7 +289,7 @@ const AddExpense: React.FC = () => {
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          items: expenseItems,
+          items: payloadItems,
           vendor: selectedVendor,
           date: new Date().toISOString().slice(0, 10),
         }),
@@ -573,6 +585,51 @@ const AddExpense: React.FC = () => {
             </div>
           )}
         </div>
+        <div>
+          <label>
+            Unit (cosmetic)
+            <br />
+            <select
+              name="unitSelect"
+              value={showUnitCustom ? 'Other' : (currentItem.unit || '')}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === 'Other') {
+                  setShowUnitCustom(true);
+                  setCurrentItem(prev => ({ ...prev, unit: '' }));
+                } else {
+                  setShowUnitCustom(false);
+                  setCurrentItem(prev => ({ ...prev, unit: v }));
+                }
+              }}
+              style={{ width: 100 }}
+            >
+              <option value="">—</option>
+              <option value="pcs">pcs</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="l">l</option>
+              <option value="ml">ml</option>
+              <option value="pack">pack</option>
+              <option value="box">box</option>
+              <option value="dozen">dozen</option>
+              <option value="Other">Other (custom)</option>
+            </select>
+          </label>
+          {showUnitCustom && (
+            <label style={{ marginLeft: 8 }}>
+              <br />
+              <input
+                type="text"
+                name="unit"
+                value={currentItem.unit || ''}
+                onChange={handleChange}
+                placeholder="custom unit (e.g., bags)"
+                style={{ width: 100 }}
+              />
+            </label>
+          )}
+        </div>
         <div style={{ position: 'relative' }}>
           <label>
             Category
@@ -725,7 +782,7 @@ const AddExpense: React.FC = () => {
                     {item.productName}
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                    Qty: {item.quantity} × ₹{item.unitPrice.toFixed(2)} = ₹{item.totalPrice.toFixed(2)}
+                    Qty: {item.quantity} {item.unit ? item.unit : ''} × ₹{item.unitPrice.toFixed(2)} = ₹{item.totalPrice.toFixed(2)}
                     {item.brand && ` • ${item.brand}`}
                     {item.categoryName && ` • ${item.categoryName}`}
                   </div>
