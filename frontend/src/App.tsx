@@ -20,6 +20,7 @@ import Analytics from "./Analytics";
 import ReportCalendar from "./ReportCalendar";
 import ReportExport from "./ReportExport";
 import PriceComparison from "./PriceComparison";
+import ShoppingCart from "./ShoppingCart";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           <Route path="/reports/calendar" element={<ReportCalendar />} />
           <Route path="/reports/export" element={<ReportExport />} />
           <Route path="/price-comparison" element={<PriceComparison />} />
+          <Route path="/shopping-cart" element={<ShoppingCart />} />
         </Route>
       </Routes>
     </Router>

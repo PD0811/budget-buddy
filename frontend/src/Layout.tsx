@@ -140,6 +140,12 @@ const Layout: React.FC = () => {
       icon: <FiTrendingDown />,
       action: () => navigate("/price-comparison"),
     },
+    {
+      key: "shopping-cart",
+      label: "Shopping Cart",
+      icon: <FiPackage />,
+      action: () => navigate("/shopping-cart"),
+    },
   ];
 
   return (

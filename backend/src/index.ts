@@ -952,6 +952,54 @@ app.get('/api/vendors/search', async (req, res) => {
   }
 });
 
+// Get last price paid by the authenticated user for a product
+app.get('/api/products/last-price', authenticateToken, async (req: any, res) => {
+  const userId = req.user.id;
+  const { product_id, name, brand } = req.query;
+
+  try {
+    let resolvedProductId = product_id ? String(product_id) : null;
+
+    // If product_id not provided, try to resolve using name (+ optional brand)
+    if (!resolvedProductId && name) {
+      const q = `
+        SELECT p.product_id
+        FROM Products p
+        WHERE lower(p.product_name) = lower($1)
+          AND COALESCE(lower(p.brand), '') = COALESCE(lower($2), '')
+        LIMIT 1
+      `;
+      const { rows } = await pool.query(q, [String(name), brand ?? '']);
+      if (rows.length > 0) resolvedProductId = rows[0].product_id;
+    }
+
+    if (!resolvedProductId) {
+      return res.status(400).json({ error: 'product_id or (name and optional brand) required' });
+    }
+
+    const priceQuery = `
+      SELECT e.unit_price, v.vendor_name, e.expense_date
+      FROM Expenses e
+      JOIN Vendors v ON e.vendor_id = v.vendor_id
+      WHERE e.user_id = $1 AND e.product_id = $2
+      ORDER BY e.expense_date DESC, e.expense_id DESC
+      LIMIT 1
+    `;
+
+    const { rows: priceRows } = await pool.query(priceQuery, [userId, resolvedProductId]);
+    if (priceRows.length === 0) {
+      return res.status(200).json({ last_unit_price: null });
+    }
+
+    const r = priceRows[0];
+    res.json({ last_unit_price: parseFloat(r.unit_price), vendor: r.vendor_name, date: r.expense_date });
+
+  } catch (err) {
+    console.error('Error fetching last price:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 // Get monthly spending by category vs average
 app.get('/api/reports/monthly-category-comparison', authenticateToken, async (req: any, res) => {
