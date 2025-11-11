@@ -587,7 +587,7 @@ const AddExpense: React.FC = () => {
         </div>
         <div>
           <label>
-            Unit (cosmetic)
+            Unit
             <br />
             <select
               name="unitSelect"
