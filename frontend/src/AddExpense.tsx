@@ -25,6 +25,7 @@ const AddExpense: React.FC = () => {
   const [brandSuggestions, setBrandSuggestions] = useState<string[]>([]);
   const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
   const [vendorSuggestions, setVendorSuggestions] = useState<string[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
@@ -208,7 +209,16 @@ const AddExpense: React.FC = () => {
       return;
     }
 
-    setExpenseItems([...expenseItems, { ...currentItem }]);
+    if (editingIndex !== null && editingIndex >= 0 && editingIndex < expenseItems.length) {
+      // Save edited item back into list
+      const newItems = expenseItems.slice();
+      newItems[editingIndex] = { ...currentItem };
+      setExpenseItems(newItems);
+      setEditingIndex(null);
+    } else {
+      setExpenseItems([...expenseItems, { ...currentItem }]);
+    }
+
     setCurrentItem({
       productName: "",
       quantity: 1,
@@ -217,6 +227,26 @@ const AddExpense: React.FC = () => {
       brand: "",
       categoryName: "",
     });
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setCurrentItem({
+      productName: "",
+      quantity: 1,
+      unitPrice: 0,
+      totalPrice: 0,
+      brand: "",
+      categoryName: "",
+    });
+  };
+
+  const editItem = (index: number) => {
+    const item = expenseItems[index];
+    if (!item) return;
+    setCurrentItem({ ...item });
+    setEditingIndex(index);
+    // Put focus on product input is optional; left to browser default
   };
 
   const removeItemFromList = (index: number) => {
@@ -613,8 +643,25 @@ const AddExpense: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            Add to List
+            {editingIndex !== null ? 'Save Changes' : 'Add to List'}
           </button>
+          {editingIndex !== null && (
+            <button
+              type="button"
+              onClick={cancelEdit}
+              style={{
+                padding: ".6rem 1.4rem",
+                background: "transparent",
+                color: "#94a3b8",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600
+              }}
+            >
+              Cancel
+            </button>
+          )}
         </div>
         </form>
       </div>
@@ -683,20 +730,36 @@ const AddExpense: React.FC = () => {
                     {item.categoryName && ` • ${item.categoryName}`}
                   </div>
                 </div>
-                <button
-                  onClick={() => removeItemFromList(index)}
-                  style={{
-                    padding: "0.25rem 0.75rem",
-                    background: "#dc2626",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "0.75rem"
-                  }}
-                >
-                  Remove
-                </button>
+                <div style={{ display: 'flex', gap: '.5rem' }}>
+                  <button
+                    onClick={() => editItem(index)}
+                    style={{
+                      padding: "0.25rem 0.75rem",
+                      background: "#2563eb",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.75rem"
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => removeItemFromList(index)}
+                    style={{
+                      padding: "0.25rem 0.75rem",
+                      background: "#dc2626",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.75rem"
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             ))}
           </div>
